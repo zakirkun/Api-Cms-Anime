@@ -1,0 +1,77 @@
+{
+    "name": "laravel/lumen",
+    "description": "The Laravel Lumen Framework.",
+    "keywords": ["framework", "laravel", "lumen"],
+    "license": "MIT",
+    "type": "project",
+    "require": {
+        "php": ">=7.2.0",
+        "ext-bcmath": "*",
+        "ext-curl": " *",
+        "curl/curl": "^2.2",
+        "derxen/simple-html-element": "dev-master",
+        "fabpot/goutte": "^3.2",
+        "facebook/webdriver": " ^1.7.1",
+        "guzzlehttp/guzzle": "^6.3",
+        "ixudra/curl": "^6.16",
+        "jaymoulin/guzzlehttp-cloudflare": "^1.0",
+        "jenssegers/agent": "^2.6",
+        "kyranrana/cloudflare-bypass": " ^v3.0",
+        "laravel/lumen-framework": "5.8.*",
+        "simple-html-dom/simple-html-dom": "^1.5",
+        "sunra/php-simple-html-dom-parser": "^1.5",
+        "symfony/browser-kit": "^4.3",
+        "symfony/css-selector": "^4.3",
+        "symfony/dom-crawler": "^4.3",
+        "symfony/http-client": "^4.3",
+        "symfony/panther": "^0.5.2",
+        "symfony/polyfill-php72": "^1.9",
+        "symfony/process": " ^3.4 || ^4.0",
+        "tunaabutbul/cloudflare-middleware": "^1.2",
+        "mobiledetect/mobiledetectlib":" ^2.7.6",
+        "jaybizzle/crawler-detect": "^1.2",
+        "jenssegers/mongodb": "^3.6",
+        "predis/predis": "^1.1"
+    },
+    "require-dev": {
+        "fzaninotto/faker": "^1.4",
+        "mockery/mockery": "^1.0",
+        "phpunit/phpunit":" ^8.0",
+        "phpmd/phpmd": "^2.4",
+        "squizlabs/php_codesniffer":" ^3.2",
+        "sebastian/phpcpd":" ^4.0",
+        "phploc/phploc": "^5.0",
+        "fabpot/goutte": "^3.2.3",
+        "guzzlehttp/guzzle":" ^6.3",
+        "symfony/css-selector": "^3.4 || ^4.0",
+        "symfony/framework-bundle":"^3.4 || ^4.0",
+        "symfony/phpunit-bridge":" ^4.3.3",
+        "php-coveralls/php-coveralls": "^2.1"
+    },
+    "autoload": {
+        "classmap": [
+            "database/seeds",
+            "database/factories"
+        ],
+        "psr-4": {
+            "App\\": "app/"
+        }
+    },
+    "autoload-dev": {
+        "classmap": [
+            "tests/"
+        ]
+    },
+    "scripts": {
+        "post-root-package-install": [
+            "@php -r \"file_exists('.env') || copy('.env.example', '.env');\""
+        ]
+    },
+    "config": {
+        "preferred-install": "dist",
+        "sort-packages": true,
+        "optimize-autoloader": true
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

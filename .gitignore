@@ -1,0 +1,8 @@
+/vendor
+/.idea
+/app/Http/Controllers/coretan
+/app/Http/Controllers/ExampleJson
+Homestead.json
+Homestead.yaml
+# .env
+
