@@ -28,13 +28,4 @@ $router->post('/TrandingWeekAnime-A', 'AnimeIndo\TrandingWeekAnimeController@Tra
 $router->post('/LastUpdateAnime-A', 'AnimeIndo\LastUpdateEpsAnimController@LastUpdateAnime');
 $router->post('/ScheduleAnime-A', 'ScheduleAnimeController@ScheduleAnime');
 
-// Nanime
-$router->post('/LastUpdateAnime-N', 'Nanime\LastUpdateEpsAnimController@LastUpdateAnime');
-$router->post('/ListAnime-N', 'Nanime\ListAnimeController@ListAnime');
-$router->post('/GenreListAnime-N', 'Nanime\GenreListAnimeController@GenreListAnime');
-$router->post('/SearchAnime-N', 'Nanime\SearchAnimeControoler@SearchAnime');
-$router->post('/SingleListAnime-N', 'Nanime\SingleListAnimeController@SingleListAnim');
-$router->post('/SearchGenreAnime-N', 'Nanime\SearchGenreAnimeController@SearchGenreAnime');
-$router->post('/TrandingWeekAnime-N', 'Nanime\TrandingWeekAnimeController@TrandingWeekAnime');
-$router->post('/StreamAnime-N', 'Nanime\StreamAnimeController@StreamAnime');
-$router->post('/ScheduleAnime-N', 'Nanime\ScheduleAnimeController@ScheduleAnime');
+require_once "apiV1.php";
