@@ -13,7 +13,9 @@ use \GuzzleHttp\Psr7;
 use \Carbon\Carbon;
 use \Sunra\PhpSimple\HtmlDomParser;
 use \App\User;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+#Load Models V1
+use App\Models\V1\MainModel as MainModel;
 
 // done
 class ListAnimeController extends Controller
@@ -21,8 +23,9 @@ class ListAnimeController extends Controller
 
     public function ListAnime(Request $request){
         $ApiKey=$request->header("X-API-KEY");
-        $generateKey =bin2hex(random_bytes(16));
-        $Token = DB::table('User')->where('token',$ApiKey)->first();
+        $generateKey = bin2hex(random_bytes(16));
+        $Users = MainModel::getUser($ApiKey);
+        $Token = $Users[0]['token'];
         if($Token){
             try{
                 $ConfigController = new ConfigController();
@@ -55,7 +58,7 @@ class ListAnimeController extends Controller
         return $API_TheMovie;
     }
 
-    public function Success($ListAnime){
+    public function Success($Save,$LogSave){
         $API_TheMovie=array(
             "API_TheMovieRs"=>array(
                 "Version"=> "N.1",
@@ -64,11 +67,11 @@ class ListAnimeController extends Controller
                 "Status"=> "Complete",
                 "Message"=>array(
                     "Type"=> "Info",
-                    "ShortText"=> "Success.",
+                    "ShortText"=> "Success Save Mysql",
                     "Code" => 200
                 ),
-                "Body"=> array(
-                    "ListAnime"=>$ListAnime
+                "LogBody"=> array(
+                    "DataLog"=>$LogSave
                 )
             )
         );
@@ -202,13 +205,42 @@ class ListAnimeController extends Controller
                                 );
                             
                         }
+                        $paramCheck['code'] = md5($Title);
+                        $checkExist = MainModel::getDataListAnime($paramCheck);
+
+                        if(empty($checkExist)){
+                            $Input = array(
+                                'code' => md5($Title),
+                                'slug' => Str::slug($Title),
+                                'title' => $Title,
+                                'key_list_anime' => $KeyListAnim,
+                                'name_index' => $NameIndexVal,
+                                'cron_at' => Carbon::now()->format('Y-m-d H:i:s')
+                            );
+                            $LogSave [] = "Data Save - ".$Title;
+                            $save = MainModel::insertListAnimeMysql($Input);
+                        }else{
+                            $conditions['id'] = $checkExist[0]['id'];
+                            $Update = array(
+                                'code' => md5($Title),
+                                'slug' => Str::slug($Title),
+                                'title' => $Title,
+                                'key_list_anime' => $KeyListAnim,
+                                'name_index' => $NameIndexVal,
+                                'cron_at' => Carbon::now()->format('Y-m-d H:i:s')
+                            );
+                            $LogSave [] =  "Data Update - ".$Title;
+                            $save = MainModel::updateListAnimeMysql($Update,$conditions);
+                        }
                     }
-                    $ListAnime[]=array(
-                        "NameIndex"=>$NameIndexVal,
-                        "ListSubIndex"=>$ListSubIndex
-                    );
+                    
+                    // $ListAnime[]=array(
+                    //     "NameIndex"=>$NameIndexVal,
+                    //     "ListSubIndex"=>$ListSubIndex
+                    // );
                 }
-                return $this->Success($ListAnime);
+                
+                return $this->Success($save,$LogSave);
             }else{
                 return $this->PageNotFound();
             }  
