@@ -11,23 +11,30 @@ use \GuzzleHttp\Cookie\FileCookieJar;
 use \GuzzleHttp\Psr7;
 use \Carbon\Carbon;
 use \Sunra\PhpSimple\HtmlDomParser;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+
+#Helpers
+use App\Helpers\V1\MappingResponseMysql as MappingMysql;
+
+#Load Models V1
+use App\Models\V1\MainModel as MainModel;
 
 // done tinggal token
 class TrandingWeekAnimeController extends Controller
 {
     public function TrandingWeekAnime(Request $request){
         $ApiKey=$request->header("X-API-KEY");
-        $Token = DB::table('User')->where('token',$ApiKey)->first();
+        $Users = MainModel::getUser($ApiKey);
+        $Token = $Users[0]['token'];
         if($Token){
-            try{
+            // try{
                 $ConfigController = new ConfigController();
                 $BASE_URL=$ConfigController->BASE_URL_ANIME_1;
                 $BASE_URL_LIST=$BASE_URL;
                 return $this->TrandingWeekAnimValue($BASE_URL_LIST,$BASE_URL);
-            }catch(\Exception $e){
-                return $this->InternalServerError();
-            }
+            // }catch(\Exception $e){
+            //     return $this->InternalServerError();
+            // }
             
         }else{
             return $this->InvalidToken();
@@ -51,7 +58,7 @@ class TrandingWeekAnimeController extends Controller
         return $API_TheMovie;
     }
 
-    public function Success($TrandingWeekAnime){
+    public function Success($save,$LogSave){
 
         $API_TheMovie=array(
             "API_TheMovieRs"=>array(
@@ -61,11 +68,11 @@ class TrandingWeekAnimeController extends Controller
                 "Status"=> "Complete",
                 "Message"=>array(
                     "Type"=> "Info",
-                    "ShortText"=> "Success.",
+                    "ShortText"=> "Success Save Mysql",
                     "Code" => 200
                 ),
-                "Body"=> array(
-                    "TrandingWeekAnime"=>$TrandingWeekAnime
+                "LogBody"=> array(
+                    "DataLog"=>$LogSave
                 )
             )
         );
@@ -148,14 +155,56 @@ class TrandingWeekAnimeController extends Controller
                         $iduniq1 = substr($result, 10, 500);
                         $result = $iduniq0 . "QWTyu" . $iduniq1;
                         $KeyListAnim = $result;
-                        $TrandingWeekAnime[] = array(
-                            "Image"=>$TopListDetail[0][$i]['image'],
-                            "Title"=>$TopListDetail[0][$i]['title'],
-                            "Status"=>preg_replace('/(\v|\s)+/', ' ', $TopListDetail[0][$i]['status']),
-                            "KeyListAnim"=>$KeyListAnim
-                        );
+                        // $TrandingWeekAnime[] = array(
+                        //     "Image"=>$TopListDetail[0][$i]['image'],
+                        //     "Title"=>$TopListDetail[0][$i]['title'],
+                        //     "Status"=>preg_replace('/(\v|\s)+/', ' ', $TopListDetail[0][$i]['status']),
+                        //     "KeyListAnim"=>$KeyListAnim
+                        // );
+                        $Title = $TopListDetail[0][$i]['title'];
+                        $Title = str_replace("Nonton anime:", "", $Title);
+                        $Title = trim($Title);
+                        $Image = $TopListDetail[0][$i]['image'];
+                        $Status = preg_replace('/(\v|\s)+/', ' ', $TopListDetail[0][$i]['status']);
+                        $paramCheck['code'] = md5(Str::slug($Title));
+                        $codeListAnime['code'] = md5($Title);
+                        $checkExist = MainModel::getDataTrendingWeek($paramCheck);
+                        $listAnime = MainModel::getDataListAnime($codeListAnime);
+                        $idListAnime = (empty($listAnime)) ? 0 : $listAnime[0]['id'];
+                        if(empty($checkExist)){
+                            $Input = array(
+                                "image" => $Image,
+                                "title" => $Title,
+                                "title_alias" => $Title,
+                                "status" => $Status,
+                                'slug' => Str::slug($Title),
+                                'key_list_anime' => $KeyListAnim,
+                                'id_list_anime' => $idListAnime,
+                                'code' => md5(Str::slug($Title)),
+                                'cron_at' => Carbon::now()->format('Y-m-d H:i:s')
+                            );
+                            $LogSave [] = "Data Save - ".$Title." ".Carbon::now()->format('Y-m-d H:i:s');
+                            $save = MainModel::insertTrendingWeekMysql($Input);
+                        }else{
+                            $conditions['id'] = $checkExist[0]['id'];
+                            $Update = array(
+                                "image" => $Image,
+                                "title" => $Title,
+                                "title_alias" => $Title,
+                                "status" => $Status,
+                                'slug' => Str::slug($Title),
+                                'key_list_anime' => $KeyListAnim,
+                                'id_list_anime' => $idListAnime,
+                                'code' => md5(Str::slug($Title)),
+                                'cron_at' => Carbon::now()->format('Y-m-d H:i:s')
+                            );
+                            $LogSave [] =  "Data Update - ".$Title." ".Carbon::now()->format('Y-m-d H:i:s');
+                            $save = MainModel::updateTrendingWeekMysql($Update,$conditions);
+                        }
+                        // dd($save);
+
                     }
-                    return $this->Success($TrandingWeekAnime);
+                    return $this->Success($save,$LogSave);
                 }else{
                     return $this->PageNotFound();
                 }

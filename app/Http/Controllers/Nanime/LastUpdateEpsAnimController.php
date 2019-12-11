@@ -217,9 +217,7 @@ class LastUpdateEpsAnimController extends Controller
                                 "HariTayang"=>substr($SubDetail01[7], strpos($SubDetail01[7], ":") + 1),
 
                             );
-                            
                             $DetailHref =  $node->filter('.col-md-12 > .episodelist')->html();
-                            
                             $href = $this->FilterHreftEpisode($DetailHref);
                             $SubListDetail=array(
                                 "subDetail"=>$SubDetail02,

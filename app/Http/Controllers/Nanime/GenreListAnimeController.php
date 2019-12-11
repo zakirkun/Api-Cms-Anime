@@ -11,14 +11,18 @@ use \GuzzleHttp\Cookie\FileCookieJar;
 use \GuzzleHttp\Psr7;
 use \Carbon\Carbon;
 use \Sunra\PhpSimple\HtmlDomParser;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+
+#Load Models V1
+use App\Models\V1\MainModel as MainModel;
 
 
 class GenreListAnimeController extends Controller
 {
     public function GenreListAnime(Request $request){
         $ApiKey=$request->header("X-API-KEY");
-        $Token = DB::table('User')->where('token',$ApiKey)->first();
+        $Users = MainModel::getUser($ApiKey);
+        $Token = $Users[0]['token'];
         if($Token){
             try{
                 $ConfigController = new ConfigController();
@@ -51,7 +55,7 @@ class GenreListAnimeController extends Controller
         return $API_TheMovie;
     }
 
-    public function Success($GenreListAnime){
+    public function Success($save,$LogSave){
         $API_TheMovie=array(
             "API_TheMovieRs"=>array(
                 "Version"=> "N.1",
@@ -63,8 +67,8 @@ class GenreListAnimeController extends Controller
                     "ShortText"=> "Success.",
                     "Code" => 200
                 ),
-                "Body"=> array(
-                    "GenreListAnime"=>$GenreListAnime
+                "LogBody"=> array(
+                    "DataLog"=>$LogSave
                 )
             )
         );
@@ -156,21 +160,40 @@ class GenreListAnimeController extends Controller
                             $iduniq1 = substr($result, 10, 500);
                             $result = $iduniq0 . "RqWtY" . $iduniq1;
                             $KeyListGenre = $result;
-                            $ListSubIndex[] = array(
-                                "Genre"=>$GenreListAnimeS[0]['subGenre'][$j]['genre'],
-                                "KeyListGenre"=> $KeyListGenre
-                            );
+                            $Genre = $GenreListAnimeS[0]['subGenre'][$j]['genre'];
+                            $paramCheck['code'] = md5(Str::slug($Genre));
+                            $checkExist = MainModel::getDataListGenre($paramCheck);
+                            if(empty($checkExist)){
+                                $Input = array(
+                                    'slug' => Str::slug($Genre),
+                                    "code" => md5(Str::slug($Genre)),
+                                    "name_index" => $NameIndex[$i],
+                                    "genre" => $Genre,
+                                    "key_list_genre" => $KeyListGenre,
+                                    'cron_at' => Carbon::now()->format('Y-m-d H:i:s')
+                                );
+                                $LogSave [] = "Data Save - ".$Genre."-".Carbon::now()->format('Y-m-d H:i:s');
+                                $save = MainModel::insertGenreListAnimeMysql($Input);
+                            }else{
+                                $conditions['id'] = $checkExist[0]['id'];
+                                $Update = array(
+                                    'slug' => Str::slug($Genre),
+                                    "code" => md5(Str::slug($Genre)),
+                                    "name_index" => $NameIndex[$i],
+                                    "genre" => $Genre,
+                                    "key_list_genre" => $KeyListGenre,
+                                    'cron_at' => Carbon::now()->format('Y-m-d H:i:s')
+                                );
+                                $LogSave [] = "Data Update - ".$Genre."-".Carbon::now()->format('Y-m-d H:i:s');
+                                $save = MainModel::updateGenreListAnimeMysql($Update,$conditions);
+                            }
+                            
                         }
                     }
                     
-                    $GenreListAnime[] = array(
-                        "NameIndex"=> $NameIndex[$i],
-                        "ListSubIndex"=> $ListSubIndex
-                    );
-                    
                 }
                 
-                return $this->Success($GenreListAnime);
+                return $this->Success($save,$LogSave);
             }else{
                 return $this->PageNotFound();
             }
