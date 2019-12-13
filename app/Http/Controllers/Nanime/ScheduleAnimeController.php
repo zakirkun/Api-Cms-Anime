@@ -11,7 +11,9 @@ use \GuzzleHttp\Cookie\FileCookieJar;
 use \GuzzleHttp\Psr7;
 use \Carbon\Carbon;
 use \Sunra\PhpSimple\HtmlDomParser;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+#Load Models V1
+use App\Models\V1\MainModel as MainModel;
 
 
 class ScheduleAnimeController extends Controller
@@ -19,7 +21,8 @@ class ScheduleAnimeController extends Controller
     public function ScheduleAnime(Request $request){
         
         $ApiKey=$request->header("X-API-KEY");
-        $Token = DB::table('User')->where('token',$ApiKey)->first();
+        $Users = MainModel::getUser($ApiKey);
+        $Token = $Users[0]['token'];
         if($Token){
             try{
                 $ConfigController = new ConfigController();
@@ -53,7 +56,7 @@ class ScheduleAnimeController extends Controller
         return $API_TheMovie;
     }
     
-    public function Success($ScheduleAnime){
+    public function Success($save,$LogSave){
         $API_TheMovie=array(
             "API_TheMovieRs"=>array(
                 "Version"=> "N.1",
@@ -65,8 +68,8 @@ class ScheduleAnimeController extends Controller
                     "ShortText"=> "Success.",
                     "Code" => 200
                 ),
-                "Body"=> array(
-                    "ScheduleAnime"=>$ScheduleAnime
+                "LogBody"=> array(
+                    "DataLog"=>$LogSave
                 )
             )
         );
@@ -131,13 +134,15 @@ class ScheduleAnimeController extends Controller
             $nodeValues = $crawler->filter('.panel-default')->each(function ($node,$i) {
                 $List= $node->filter('.collapse')->each(function ($node,$i) {
                     $SubList= $node->filter('.col-md-3 ')->each(function ($node,$i) {
-                        $title = $node->filter('.post-title')->text('Default text content');
+                        $title = $node->filter('.post-title')->attr('title');
+                        $titleAlias = $node->filter('.post-title')->text('Default text content');
                         $href =$node->filter('a')->attr('href');
                         $image=$node->filter('img')->attr('src');
                         $item = [
-                            'Title'=>$title,
-                            'href'=>$href,
-                            'image'=>$image
+                            'TitleAlias' => $titleAlias,
+                            'href' => $href,
+                            'title' => $title,
+                            'image' => $image
                         ];
                         return $item;
                     });
@@ -159,23 +164,60 @@ class ScheduleAnimeController extends Controller
                     $ListSubIndex=array();
                     for($j=0;$j<count($nodeValues[$i]['List'][0]);$j++){
                         $KeyListAnimEnc= array(
-                            "Title"=>$nodeValues[$i]['List'][0][$j]['Title'],
+                            "Title"=>$nodeValues[$i]['List'][0][$j]['title'],
                             "Image"=>$nodeValues[$i]['List'][0][$j]['image'],
                             "href"=>$BASE_URL."".$nodeValues[$i]['List'][0][$j]['href'],
                         );
                         $KeyListAnim = $this->EncriptKeyListAnim($KeyListAnimEnc);
-                        $ListSubIndex[]= array(
-                            "Title"=>$nodeValues[$i]['List'][0][$j]['Title'],
-                            "Image"=>$nodeValues[$i]['List'][0][$j]['image'],
-                            "KeyListAnim"=>$KeyListAnim
-                        );
+                        $Image = $nodeValues[$i]['List'][0][$j]['image'];
+                        $Title = $nodeValues[$i]['List'][0][$j]['title'];
+                        $Title = str_replace("(TV)", "", $Title);
+                        $Title = trim($Title);
+                        $TitleAlias = $nodeValues[$i]['List'][0][$j]['TitleAlias'];
+                        
+                        $paramCheck['code'] = md5(Str::slug($Title));
+                        $codeListAnime['code'] = md5($Title);
+                        $checkExist = MainModel::getDataScheduleAnime($paramCheck);
+                        $listAnime = MainModel::getDataListAnime($codeListAnime);
+                        $idListAnime = (empty($listAnime)) ? 0 : $listAnime[0]['id'];
+
+                        if(empty($checkExist)){
+                            $Input = array(
+                                'code' => md5(Str::slug($Title)),
+                                'slug' => Str::slug($Title),
+                                'name_day' => $NameDay,
+                                'title' => $Title,
+                                'title_alias' => $TitleAlias,
+                                'image' => $Image,
+                                'key_list_anime' => $KeyListAnim,
+                                'id_list_anime' => $idListAnime,
+                                'cron_at' => Carbon::now()->format('Y-m-d H:i:s')
+                            );
+                            
+                            $LogSave [] = "Data Save - ".$Title;
+                            $save = MainModel::insertScheduleMysql($Input);
+                        }else{
+                            $conditions['id'] = $checkExist[0]['id'];
+                            $Update = array(
+                                'code' => md5(Str::slug($Title)),
+                                'slug' => Str::slug($Title),
+                                'name_day' => $NameDay,
+                                'title' => $Title,
+                                'title_alias' => $TitleAlias,
+                                'image' => $Image,
+                                'key_list_anime' => $KeyListAnim,
+                                'id_list_anime' => $idListAnime,
+                                'cron_at' => Carbon::now()->format('Y-m-d H:i:s')
+                            );
+                            $LogSave [] =  "Data Update - ".$Title;
+                            $save = MainModel::updateScheduleWeekMysql($Update,$conditions);
+                        }
+                        
                     }
-                    $ScheduleAnime[]=array(
-                        "NameDay"=>$NameDay,
-                        "ListSubIndex"=>$ListSubIndex
-                    );
+                    
+                    
                 }
-                return $this->Success($ScheduleAnime);
+                return $this->Success($save,$LogSave);
             }else{
                 return $this->PageNotFound();
             }
