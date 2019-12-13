@@ -155,12 +155,7 @@ class TrandingWeekAnimeController extends Controller
                         $iduniq1 = substr($result, 10, 500);
                         $result = $iduniq0 . "QWTyu" . $iduniq1;
                         $KeyListAnim = $result;
-                        // $TrandingWeekAnime[] = array(
-                        //     "Image"=>$TopListDetail[0][$i]['image'],
-                        //     "Title"=>$TopListDetail[0][$i]['title'],
-                        //     "Status"=>preg_replace('/(\v|\s)+/', ' ', $TopListDetail[0][$i]['status']),
-                        //     "KeyListAnim"=>$KeyListAnim
-                        // );
+                        
                         $Title = $TopListDetail[0][$i]['title'];
                         $Title = str_replace("Nonton anime:", "", $Title);
                         $Title = trim($Title);
@@ -201,7 +196,7 @@ class TrandingWeekAnimeController extends Controller
                             $LogSave [] =  "Data Update - ".$Title." ".Carbon::now()->format('Y-m-d H:i:s');
                             $save = MainModel::updateTrendingWeekMysql($Update,$conditions);
                         }
-                        // dd($save);
+                        
 
                     }
                     return $this->Success($save,$LogSave);
