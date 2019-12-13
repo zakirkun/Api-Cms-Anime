@@ -11,7 +11,10 @@ use \GuzzleHttp\Cookie\FileCookieJar;
 use \GuzzleHttp\Psr7;
 use \Carbon\Carbon;
 use \Sunra\PhpSimple\HtmlDomParser;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+
+#Load Models V1
+use App\Models\V1\MainModel as MainModel;
 
 // done
 class SingleListAnimeController extends Controller
@@ -20,10 +23,11 @@ class SingleListAnimeController extends Controller
     public function SingleListAnim(Request $request){
         $ApiKey=$request->header("X-API-KEY");
         $KeyListAnim=$request->header("KeyListAnim");
-        $Token = DB::table('User')->where('token',$ApiKey)->first();
+        $Users = MainModel::getUser($ApiKey);
+        $Token = $Users[0]['token'];
         
         if($Token){
-            try{
+            // try{
                 $findCode=strstr($KeyListAnim,'QWTyu');
                 $KeyListDecode=$this->DecodeKeylistAnime($KeyListAnim);
                 if($findCode){
@@ -39,9 +43,9 @@ class SingleListAnimeController extends Controller
                 }else{
                     return $this->InvalidKey();
                 }
-            }catch(\Exception $e){
-                return $this->InternalServerError();
-            }
+            // }catch(\Exception $e){
+            //     return $this->InternalServerError();
+            // }
             
         }else{
             return $this->InvalidToken();
@@ -316,6 +320,7 @@ class SingleListAnimeController extends Controller
                     "ListDetail"=>$ListDetail,
                     "ListEpisode"=>$ListEpisode
                 );
+                
                 
                 return $this->Success($SingleListAnime);
 
