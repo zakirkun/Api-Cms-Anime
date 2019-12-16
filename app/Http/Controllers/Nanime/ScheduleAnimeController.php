@@ -19,7 +19,7 @@ use App\Models\V1\MainModel as MainModel;
 class ScheduleAnimeController extends Controller
 {
     public function ScheduleAnime(Request $request){
-        
+        $awal = microtime(true);
         $ApiKey=$request->header("X-API-KEY");
         $Users = MainModel::getUser($ApiKey);
         $Token = $Users[0]['token'];
@@ -28,7 +28,7 @@ class ScheduleAnimeController extends Controller
                 $ConfigController = new ConfigController();
                 $BASE_URL=$ConfigController->BASE_URL_ANIME_1;
                 $BASE_URL_LIST=$BASE_URL."/page/jadwal-rilis/";
-                return $this->ScheduleAnimeValue($BASE_URL_LIST,$BASE_URL);
+                return $this->ScheduleAnimeValue($BASE_URL_LIST,$BASE_URL,$awal);
             }catch(\Exception $e){
                 return $this->InternalServerError();
             }
@@ -56,7 +56,7 @@ class ScheduleAnimeController extends Controller
         return $API_TheMovie;
     }
     
-    public function Success($save,$LogSave){
+    public function Success($save,$LogSave,$awal){
         $API_TheMovie=array(
             "API_TheMovieRs"=>array(
                 "Version"=> "N.1",
@@ -66,6 +66,7 @@ class ScheduleAnimeController extends Controller
                 "Message"=>array(
                     "Type"=> "Info",
                     "ShortText"=> "Success.",
+                    "Speed" => self::SpeedResponse($awal),
                     "Code" => 200
                 ),
                 "LogBody"=> array(
@@ -120,7 +121,7 @@ class ScheduleAnimeController extends Controller
         return $KeyEncript;
     }
     
-    public function ScheduleAnimeValue($BASE_URL_LIST,$BASE_URL){
+    public function ScheduleAnimeValue($BASE_URL_LIST,$BASE_URL,$awal){
         $client = new Client(['cookies' => new FileCookieJar('cookies.txt')]);
         $client->getConfig('handler')->push(CloudflareMiddleware::create());
         $goutteClient = new GoutteClient();
@@ -176,7 +177,7 @@ class ScheduleAnimeController extends Controller
                         $TitleAlias = $nodeValues[$i]['List'][0][$j]['TitleAlias'];
                         
                         $paramCheck['code'] = md5(Str::slug($Title));
-                        $codeListAnime['code'] = md5($Title);
+                        $codeListAnime['code'] = md5(Str::slug($Title));
                         $checkExist = MainModel::getDataScheduleAnime($paramCheck);
                         $listAnime = MainModel::getDataListAnime($codeListAnime);
                         $idListAnime = (empty($listAnime)) ? 0 : $listAnime[0]['id'];
@@ -217,12 +218,21 @@ class ScheduleAnimeController extends Controller
                     
                     
                 }
-                return $this->Success($save,$LogSave);
+                return $this->Success($save,$LogSave,$awal);
             }else{
                 return $this->PageNotFound();
             }
         }else{
             return $this->PageNotFound();
         }
+    }
+
+    public static function SpeedResponse($awal){
+        $akhir = microtime(true);
+        $durasi = $akhir - $awal;
+        $jam = (int)($durasi/60/60);
+        $menit = (int)($durasi/60) - $jam*60;
+        $detik = $durasi - $jam*60*60 - $menit*60;
+        return $kecepatan = number_format((float)$detik, 2, '.', '');
     }
 }

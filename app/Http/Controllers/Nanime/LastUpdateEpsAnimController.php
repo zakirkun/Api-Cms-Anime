@@ -25,12 +25,7 @@ use App\Models\V1\MainModel as MainModel;
 class LastUpdateEpsAnimController extends Controller
 {
     public function LastUpdateAnime(Request $request){
-
-        function __construct(){
-            $this->MappingMysql = new MappingMysql();
-            
-        }
-        
+        $awal = microtime(true);        
         $ApiKey=$request->header("X-API-KEY");
         $PageNumber=$request->header("PageNumber") ? $request->header("PageNumber") : 1;
         $Users = MainModel::getUser($ApiKey);
@@ -44,7 +39,7 @@ class LastUpdateEpsAnimController extends Controller
                 }else{
                     $BASE_URL_LIST=$BASE_URL."/?page=".$PageNumber;
                 }
-                return $this->LastUpdateAnimValue($PageNumber,$BASE_URL_LIST,$BASE_URL);
+                return $this->LastUpdateAnimValue($PageNumber,$BASE_URL_LIST,$BASE_URL,$awal);
             }catch(\Exception $e){
                 return $this->InternalServerError();
             }
@@ -55,8 +50,32 @@ class LastUpdateEpsAnimController extends Controller
 
         
     }
+
+    public function generateLastUpdateAnime(Request $request){
+        $awal = microtime(true);        
+        $ApiKey=$request->header("X-API-KEY");
+        $PageNumber=$request->header("PageNumber") ? $request->header("PageNumber") : 1;
+        $Users = MainModel::getUser($ApiKey);
+        $Token = $Users[0]['token'];
+        if($Token){
+            // try{
+
+                return $this->LastUpdateGenerateValue($PageNumber,$BASE_URL_LIST,$BASE_URL,$awal);
+            // }catch(\Exception $e){
+            //     return $this->InternalServerError();
+            // }
+        }else{
+            return $this->InvalidToken();
+        }
+    }
+
+    public static function LastUpdateGenerateValue(){
+
+    }
+
+
     
-    public function Success($Save,$LogSave){
+    public function Success($Save,$LogSave,$awal){
         $API_TheMovie=array(
             "API_TheMovieRs"=>array(
                 "Version"=> "N.1",
@@ -66,6 +85,7 @@ class LastUpdateEpsAnimController extends Controller
                 "Message"=>array(
                     "Type"=> "Info",
                     "ShortText"=> "Success Save Mysql",
+                    "Speed" => self::SpeedResponse($awal),
                     "Code" => 200
                 ),
                 "LogBody"=> array(
@@ -150,7 +170,7 @@ class LastUpdateEpsAnimController extends Controller
         return $href;
     }
 
-    public function LastUpdateAnimValue($PageNumber,$BASE_URL_LIST,$BASE_URL){
+    public function LastUpdateAnimValue($PageNumber,$BASE_URL_LIST,$BASE_URL,$awal){
         $client = new Client(['cookies' => new FileCookieJar('cookies.txt')]);
         $client->getConfig('handler')->push(CloudflareMiddleware::create());
         $goutteClient = new GoutteClient();
@@ -296,9 +316,10 @@ class LastUpdateEpsAnimController extends Controller
                         $result = $iduniq0 . "QtYWL" . $iduniq1;
                         $KeyEpisode = $result;
                         $paramCheck['code'] = md5(Str::slug($Title)."-".Str::slug($Episode));
-                        $codeListAnime['code'] = md5($Title);
+                        $codeListAnime['code'] = md5(Str::slug($Title));
                         $checkExist = MainModel::getDataLastUpdate($paramCheck);
                         $listAnime = MainModel::getDataListAnime($codeListAnime);
+
                         $idListAnime = (empty($listAnime)) ? 0 : $listAnime[0]['id'];
                         
                         if(empty($checkExist)){
@@ -311,7 +332,7 @@ class LastUpdateEpsAnimController extends Controller
                                 "keyepisode" => $KeyEpisode,
                                 'total_search_page' => $TotalSearchPage,
                                 'page_search' => $PageNumber,
-                                'slug' => Str::slug($Title),
+                                'slug' => (Str::slug($Title)."-".Str::slug($Episode)),
                                 'id_list_anime' => $idListAnime,
                                 'code' => md5(Str::slug($Title)."-".Str::slug($Episode)),
                                 'cron_at' => Carbon::now()->format('Y-m-d H:i:s')
@@ -329,7 +350,7 @@ class LastUpdateEpsAnimController extends Controller
                                 "keyepisode" => $KeyEpisode,
                                 'total_search_page' => $TotalSearchPage,
                                 'page_search' => $PageNumber,
-                                'slug' => Str::slug($Title),
+                                'slug' => (Str::slug($Title)."-".Str::slug($Episode)),
                                 'id_list_anime' => $idListAnime,
                                 'code' => md5(Str::slug($Title)."-".Str::slug($Episode)),
                                 'cron_at' => Carbon::now()->format('Y-m-d H:i:s')
@@ -340,7 +361,7 @@ class LastUpdateEpsAnimController extends Controller
                         
                     }
                     
-                    return $this->Success($save,$LogSave);
+                    return $this->Success($save,$LogSave,$awal);
                 }else{
                     return $this->PageNotFound();
                 }
@@ -351,5 +372,14 @@ class LastUpdateEpsAnimController extends Controller
         }else{
             return $this->PageNotFound();
         }
+    }
+
+    public static function SpeedResponse($awal){
+        $akhir = microtime(true);
+        $durasi = $akhir - $awal;
+        $jam = (int)($durasi/60/60);
+        $menit = (int)($durasi/60) - $jam*60;
+        $detik = $durasi - $jam*60*60 - $menit*60;
+        return $kecepatan = number_format((float)$detik, 2, '.', '');
     }
 }

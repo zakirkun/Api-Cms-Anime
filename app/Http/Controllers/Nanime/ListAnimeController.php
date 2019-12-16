@@ -22,6 +22,7 @@ class ListAnimeController extends Controller
 {
 
     public function ListAnime(Request $request){
+        $awal = microtime(true);
         $ApiKey=$request->header("X-API-KEY");
         $generateKey = bin2hex(random_bytes(16));
         $Users = MainModel::getUser($ApiKey);
@@ -31,7 +32,7 @@ class ListAnimeController extends Controller
                 $ConfigController = new ConfigController();
                 $BASE_URL_LIST=$ConfigController->BASE_URL_LIST_ANIME_1;
                 $BASE_URL=$ConfigController->BASE_URL_ANIME_1;
-                return $this->ListAnimeValue($BASE_URL_LIST,$BASE_URL);
+                return $this->ListAnimeValue($BASE_URL_LIST,$BASE_URL,$awal);
             }catch(\Exception $e){
                 return $this->InternalServerError();
             }
@@ -58,7 +59,7 @@ class ListAnimeController extends Controller
         return $API_TheMovie;
     }
 
-    public function Success($Save,$LogSave){
+    public function Success($Save,$LogSave,$awal){
         $API_TheMovie=array(
             "API_TheMovieRs"=>array(
                 "Version"=> "N.1",
@@ -68,6 +69,7 @@ class ListAnimeController extends Controller
                 "Message"=>array(
                     "Type"=> "Info",
                     "ShortText"=> "Success Save Mysql",
+                    "Speed" => self::SpeedResponse($awal),
                     "Code" => 200
                 ),
                 "LogBody"=> array(
@@ -113,7 +115,7 @@ class ListAnimeController extends Controller
         return $API_TheMovie;
     }
     
-    public function ListAnimeValue($BASE_URL_LIST,$BASE_URL){
+    public function ListAnimeValue($BASE_URL_LIST,$BASE_URL,$awal){
         $client = new Client(['cookies' => new FileCookieJar('cookies.txt')]);
         $client->getConfig('handler')->push(CloudflareMiddleware::create());
         $goutteClient = new GoutteClient();
@@ -205,12 +207,12 @@ class ListAnimeController extends Controller
                                 );
                             
                         }
-                        $paramCheck['code'] = md5($Title);
+                        $paramCheck['code'] = md5(Str::slug($Title));
                         $checkExist = MainModel::getDataListAnime($paramCheck);
 
                         if(empty($checkExist)){
                             $Input = array(
-                                'code' => md5($Title),
+                                'code' => md5(Str::slug($Title)),
                                 'slug' => Str::slug($Title),
                                 'title' => $Title,
                                 'key_list_anime' => $KeyListAnim,
@@ -222,7 +224,7 @@ class ListAnimeController extends Controller
                         }else{
                             $conditions['id'] = $checkExist[0]['id'];
                             $Update = array(
-                                'code' => md5($Title),
+                                'code' => md5(Str::slug($Title)),
                                 'slug' => Str::slug($Title),
                                 'title' => $Title,
                                 'key_list_anime' => $KeyListAnim,
@@ -240,7 +242,7 @@ class ListAnimeController extends Controller
                     // );
                 }
                 
-                return $this->Success($save,$LogSave);
+                return $this->Success($save,$LogSave,$awal);
             }else{
                 return $this->PageNotFound();
             }  
@@ -249,4 +251,12 @@ class ListAnimeController extends Controller
         }
     }
     //
+    public static function SpeedResponse($awal){
+        $akhir = microtime(true);
+        $durasi = $akhir - $awal;
+        $jam = (int)($durasi/60/60);
+        $menit = (int)($durasi/60) - $jam*60;
+        $detik = $durasi - $jam*60*60 - $menit*60;
+        return $kecepatan = number_format((float)$detik, 2, '.', '');
+    }
 }

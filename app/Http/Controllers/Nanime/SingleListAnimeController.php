@@ -21,13 +21,14 @@ class SingleListAnimeController extends Controller
 {
     // KeyListAnim
     public function SingleListAnim(Request $request){
+        $awal = microtime(true);
         $ApiKey=$request->header("X-API-KEY");
         $KeyListAnim=$request->header("KeyListAnim");
         $Users = MainModel::getUser($ApiKey);
         $Token = $Users[0]['token'];
         
         if($Token){
-            // try{
+            try{
                 $findCode=strstr($KeyListAnim,'QWTyu');
                 $KeyListDecode=$this->DecodeKeylistAnime($KeyListAnim);
                 if($findCode){
@@ -36,16 +37,16 @@ class SingleListAnimeController extends Controller
                         $ConfigController = new ConfigController();
                         $BASE_URL=$ConfigController->BASE_URL_ANIME_1;
                         $BASE_URL_LIST=$subHref;
-                        return $this->SingleListAnimeValue($BASE_URL_LIST,$BASE_URL);
+                        return $this->SingleListAnimeValue($BASE_URL_LIST,$BASE_URL,$awal);
                     }else{
                         return $this->InvalidKey();
                     }                
                 }else{
                     return $this->InvalidKey();
                 }
-            // }catch(\Exception $e){
-            //     return $this->InternalServerError();
-            // }
+            }catch(\Exception $e){
+                return $this->InternalServerError();
+            }
             
         }else{
             return $this->InvalidToken();
@@ -70,7 +71,7 @@ class SingleListAnimeController extends Controller
         return $API_TheMovie;
     }
 
-    public function Success($SingleListAnime){
+    public function Success($save,$LogSave,$awal){
         $API_TheMovie=array(
             "API_TheMovieRs"=>array(
                 "Version"=> "N.1",
@@ -80,10 +81,11 @@ class SingleListAnimeController extends Controller
                 "Message"=>array(
                     "Type"=> "Info",
                     "ShortText"=> "Success.",
+                    "Speed" => self::SpeedResponse($awal),
                     "Code" => 200
                 ),
-                "Body"=> array(
-                    "SingleListAnime"=>$SingleListAnime
+                "LogBody"=> array(
+                    "DataLog"=>$LogSave
                 )
             )
         );
@@ -150,7 +152,7 @@ class SingleListAnimeController extends Controller
         return $KeyListDecode;
     }
 
-    public function SingleListAnimeValue($BASE_URL_LIST,$BASE_URL){
+    public function SingleListAnimeValue($BASE_URL_LIST,$BASE_URL,$awal){
         $client = new Client(['cookies' => new FileCookieJar('cookies.txt')]);
         $client->getConfig('handler')->push(CloudflareMiddleware::create());
         $goutteClient = new GoutteClient();
@@ -254,13 +256,12 @@ class SingleListAnimeController extends Controller
             
             if($SubListDetail){
                 $genree="";
-                $Title = strtok($SubListDetail[0]['subDetail']['Title'],'<');
+                $Title = trim(strtok($SubListDetail[0]['subDetail']['Title'],'<'));
                 $Synopsis = trim($SubListDetail[0]['synopsis']);
                 $SubGenre =  $SubListDetail[0]['genre'];
                 for($i=0;$i<count($SubGenre);$i++){
                     $genree .=strtok($SubListDetail[0]['genre'][$i],'<').'| ';
                 }
-                
                 
                 $Tipe = "";
                 $Status = strtok($SubListDetail[0]['subDetail']['Status'], '<');
@@ -272,57 +273,78 @@ class SingleListAnimeController extends Controller
                 $Duration = "";
                 $GenreList = rtrim($genree,"|");
 
-                $ListInfo = array(
-                    "Tipe" => $Tipe,
-                    "Genre" => $GenreList,
-                    "Status" => $Status,
-                    "Episode" => $Episode,
-                    "Years" => $Years,
-                    "Score" => $Score,
-                    "Rating" => $Rating,
-                    "Studio" => $Studio,
-                    "Duration" => $Duration
-                );
+                // $ListInfo = array(
+                //     "Tipe" => $Tipe,
+                //     "Genre" => $GenreList,
+                //     "Status" => $Status,
+                //     "Episode" => $Episode,
+                //     "Years" => $Years,
+                //     "Score" => $Score,
+                //     "Rating" => $Rating,
+                //     "Studio" => $Studio,
+                //     "Duration" => $Duration
+                // );
+                $imageUrl = $SubListDetail[0]['image'];
                 
-                $ListDetail[]=array(
-                    "ListInfo"=>$ListInfo,
-                    "Synopsis"=>trim($Synopsis)
-                );
+
+                $paramCheck['code'] = md5(Str::slug($Title));
+                $codeListAnime['code'] = md5(Str::slug($Title));
+                $checkExist = MainModel::getDataDetailAnime($paramCheck);
+                $listAnime = MainModel::getDataListAnime($codeListAnime);
+                $idListAnime = (empty($listAnime)) ? 0 : $listAnime[0]['id'];
                 
-                $ListEpisode = array();
-                $imageUrl=$SubListDetail[0]['image'];
-                for($i=0;$i<count($SubListDetail[0]['DataEps'][0]);$i++){
-                    $KeyEpisodeEnc = array(
-                        "Title"=> $Title,
-                        "Image"=>$imageUrl,
-                        "Status" => $Status,
-                        "href"=>$BASE_URL."".$SubListDetail[0]['DataEps'][0][$i]['href'],
-                        "Episode"=>$SubListDetail[0]['DataEps'][0][$i]['nameEps'],
+
+                $LogSave = array();
+                if(empty($checkExist)){
+                    $Input = array(
+                        'code' => md5(Str::slug($Title)),
+                        'slug' => Str::slug($Title),
+                        'title' => $Title,
+                        'image' => $imageUrl,
+                        'tipe' => $Tipe,
+                        'genre' => $GenreList,
+                        'status' => $Status,
+                        'episode_total' => $Episode,
+                        'years' => $Years,
+                        'score' => $Score,
+                        'rating' => $Rating,
+                        'studio' => $Studio,
+                        'duration' => $Duration,
+                        'synopsis' => trim($Synopsis),
+                        'id_list_anime' => $idListAnime,
                         
+                        'cron_at' => Carbon::now()->format('Y-m-d H:i:s')
+                    );
+                    $save = MainModel::insertDetailMysql($Input);
+                    $LogSave = $this->saveListEpisode($SubListDetail,$idListAnime,$Title,$BASE_URL);
+
+                }else{
+                    $conditions['id'] = $checkExist[0]['id'];
+                    $Update = array(
+                        'code' => md5(Str::slug($Title)),
+                        'slug' => Str::slug($Title),
+                        'title' => $Title,
+                        'image' => $imageUrl,
+                        'tipe' => $Tipe,
+                        'genre' => $GenreList,
+                        'status' => $Status,
+                        'episode_total' => $Episode,
+                        'years' => $Years,
+                        'score' => $Score,
+                        'rating' => $Rating,
+                        'studio' => $Studio,
+                        'duration' => $Duration,
+                        'synopsis' => trim($Synopsis),
+                        'id_list_anime' => $idListAnime,
+                        
+                        'cron_at' => Carbon::now()->format('Y-m-d H:i:s')
                     );
                     
-                    $result = base64_encode(json_encode($KeyEpisodeEnc));
-                    $result = str_replace("=", "QRCAbuK", $result);
-                    $iduniq0 = substr($result, 0, 10);
-                    $iduniq1 = substr($result, 10, 500);
-                    $result = $iduniq0 . "QtYWL" . $iduniq1;
-                    $KeyEpisode = $result;
-                    $ListEpisode[] = array(
-                        "Episode"=>$SubListDetail[0]['DataEps'][0][$i]['nameEps'],
-                        "DateUpload"=>"",
-                        "KeyEpisode"=>$KeyEpisode
-                    );
-                    
+                    $save = MainModel::updateDetailMysql($Update,$conditions);
+                    $LogSave = $this->saveListEpisode($SubListDetail,$idListAnime,$Title,$BASE_URL);
                 }
-                $SingleListAnime[] = array(
-                    "Title"=> $Title,
-                    "Image"=>$imageUrl,
-                    "ListDetail"=>$ListDetail,
-                    "ListEpisode"=>$ListEpisode
-                );
                 
-                
-                return $this->Success($SingleListAnime);
+                return $this->Success($save,$LogSave,$awal);
 
             }else{
                 return $this->PageNotFound();
@@ -330,5 +352,71 @@ class SingleListAnimeController extends Controller
         }else{
             return $this->PageNotFound();
         }
+    }
+
+    public static function saveListEpisode($SubListDetail,$idListAnime,$Title,$BASE_URL){
+        $Status = strtok($SubListDetail[0]['subDetail']['Status'], '<');
+        $ListEpisode = array();
+        $imageUrl = $SubListDetail[0]['image'];
+        for($i=0;$i<count($SubListDetail[0]['DataEps'][0]);$i++){
+            $KeyEpisodeEnc = array(
+                "Title"=> $Title,
+                "Image"=>$imageUrl,
+                "Status" => $Status,
+                "href"=>$BASE_URL."".$SubListDetail[0]['DataEps'][0][$i]['href'],
+                "Episode"=>$SubListDetail[0]['DataEps'][0][$i]['nameEps'],
+                
+            );
+            $Episode = $SubListDetail[0]['DataEps'][0][$i]['nameEps'];
+
+            $result = base64_encode(json_encode($KeyEpisodeEnc));
+            $result = str_replace("=", "QRCAbuK", $result);
+            $iduniq0 = substr($result, 0, 10);
+            $iduniq1 = substr($result, 10, 500);
+            $result = $iduniq0 . "QtYWL" . $iduniq1;
+            $KeyEpisode = $result;
+            
+            $paramCheck['code'] = md5(Str::slug($Title)."-".Str::slug($Episode));
+            $codeDetailAnime['code'] = md5(Str::slug($Title));
+            $checkExist = MainModel::getDataListEpisoeAnime($paramCheck);
+            $detailAnime = MainModel::getDataDetailAnime($codeDetailAnime);
+            $idDetailAnime = (empty($detailAnime)) ? 0 : $detailAnime[0]['id'];
+            if(empty($checkExist)){
+                $Input = array(
+                    'code' => md5(Str::slug($Title)."-".Str::slug($Episode)),
+                    'slug' => (Str::slug($Title)."-".Str::slug($Episode)),
+                    "episode" => $Episode,
+                    'key_episode' => $KeyEpisode,
+                    'id_list_anime' => $idListAnime,
+                    'id_detail_anime' => $idDetailAnime,
+                    'cron_at' => Carbon::now()->format('Y-m-d H:i:s')
+                );
+                $LogSave [] = "Data Save - ".$Episode."-".$Title;
+                $save = MainModel::insertListEpisodelMysql($Input);
+            }else{
+                $conditions['id'] = $checkExist[0]['id'];
+                $Update = array(
+                    'code' => md5(Str::slug($Title)."-".Str::slug($Episode)),
+                    'slug' => (Str::slug($Title)."-".Str::slug($Episode)),
+                    "episode" => $Episode,
+                    'key_episode' => $KeyEpisode,
+                    'id_list_anime' => $idListAnime,
+                    'id_detail_anime' => $idDetailAnime,
+                    'cron_at' => Carbon::now()->format('Y-m-d H:i:s')
+                );
+                $LogSave [] =  "Data Update - ".$Episode."-".$Title;
+                $save = MainModel::updateListEpisodeMysql($Update,$conditions);
+            }
+        }
+        return $LogSave;
+    }
+
+    public static function SpeedResponse($awal){
+        $akhir = microtime(true);
+        $durasi = $akhir - $awal;
+        $jam = (int)($durasi/60/60);
+        $menit = (int)($durasi/60) - $jam*60;
+        $detik = $durasi - $jam*60*60 - $menit*60;
+        return $kecepatan = number_format((float)$detik, 2, '.', '');
     }
 }
