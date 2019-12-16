@@ -20,6 +20,7 @@ use App\Models\V1\MainModel as MainModel;
 class GenreListAnimeController extends Controller
 {
     public function GenreListAnime(Request $request){
+        $awal = microtime(true);
         $ApiKey=$request->header("X-API-KEY");
         $Users = MainModel::getUser($ApiKey);
         $Token = $Users[0]['token'];
@@ -28,7 +29,7 @@ class GenreListAnimeController extends Controller
                 $ConfigController = new ConfigController();
                 $BASE_URL_LIST=$ConfigController->BASE_URL_ANIME_1."/archive/genre/";
                 $BASE_URL=$ConfigController->BASE_URL_ANIME_1;
-                return $this->GenreListAnimValue($BASE_URL_LIST,$BASE_URL);
+                return $this->GenreListAnimValue($BASE_URL_LIST,$BASE_URL,$awal);
             }catch(\Exception $e){
                 return $this->InternalServerError();
             }
@@ -55,7 +56,7 @@ class GenreListAnimeController extends Controller
         return $API_TheMovie;
     }
 
-    public function Success($save,$LogSave){
+    public function Success($save,$LogSave,$awal){
         $API_TheMovie=array(
             "API_TheMovieRs"=>array(
                 "Version"=> "N.1",
@@ -65,6 +66,7 @@ class GenreListAnimeController extends Controller
                 "Message"=>array(
                     "Type"=> "Info",
                     "ShortText"=> "Success.",
+                    "Speed" => self::SpeedResponse($awal),
                     "Code" => 200
                 ),
                 "LogBody"=> array(
@@ -111,7 +113,7 @@ class GenreListAnimeController extends Controller
         return $API_TheMovie;
     }
 
-    public function GenreListAnimValue($BASE_URL_LIST,$BASE_URL){
+    public function GenreListAnimValue($BASE_URL_LIST,$BASE_URL,$awal){
         $client = new Client(['cookies' => new FileCookieJar('cookies.txt')]);
         $client->getConfig('handler')->push(CloudflareMiddleware::create());
         $goutteClient = new GoutteClient();
@@ -193,12 +195,21 @@ class GenreListAnimeController extends Controller
                     
                 }
                 
-                return $this->Success($save,$LogSave);
+                return $this->Success($save,$LogSave,$awal);
             }else{
                 return $this->PageNotFound();
             }
         }else{
             return $this->PageNotFound();
         }
+    }
+
+    public static function SpeedResponse($awal){
+        $akhir = microtime(true);
+        $durasi = $akhir - $awal;
+        $jam = (int)($durasi/60/60);
+        $menit = (int)($durasi/60) - $jam*60;
+        $detik = $durasi - $jam*60*60 - $menit*60;
+        return $kecepatan = number_format((float)$detik, 2, '.', '');
     }
 }

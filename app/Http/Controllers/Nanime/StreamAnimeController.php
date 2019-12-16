@@ -13,16 +13,21 @@ use \Carbon\Carbon;
 use \Symfony\Component\Panther\PantherTestCase;
 use Symfony\Component\Panther\Client as Client2;
 use \Sunra\PhpSimple\HtmlDomParser;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+
+#Load Models V1
+use App\Models\V1\MainModel as MainModel;
 
 // done but masih proses debuging
 class StreamAnimeController extends Controller
 {
     // keyEpisode
         public function StreamAnime(Request $request){
+            $awal = microtime(true);
             $ApiKey=$request->header("X-API-KEY");
             $KeyEpisode=$request->header("KeyEpisode");
-            $Token = DB::table('User')->where('token',$ApiKey)->first();
+            $Users = MainModel::getUser($ApiKey);
+            $Token = $Users[0]['token'];
             $NextEpisode = $request->header("NextEpisode");
             $PrevEpisode = $request->header("PrevEpisode");
             if($Token){
@@ -40,7 +45,7 @@ class StreamAnimeController extends Controller
                                     $KeyPagiDecode = $this->DecodePaginationEps($NextEpisode);
                                     $URL_Next=$KeyPagiDecode->href;
                                     $BASE_URL_LIST=$URL_Next;
-                                    return $this->StreamValue($BASE_URL_LIST,$BASE_URL);
+                                    return $this->StreamValue($BASE_URL_LIST,$BASE_URL,$awal);
                                 }else{
                                     return $this->InvalidKeyPagination();
                                 }
@@ -50,13 +55,13 @@ class StreamAnimeController extends Controller
                                     $KeyPagiDecode = $this->DecodePaginationEps($PrevEpisode);
                                     $URL_PREV=$KeyPagiDecode->href;
                                     $BASE_URL_LIST=$URL_PREV;
-                                    return $this->StreamValue($BASE_URL_LIST,$BASE_URL);
+                                    return $this->StreamValue($BASE_URL_LIST,$BASE_URL,$awal);
                                 }else{
                                     return $this->InvalidKeyPagination();
                                 }
                             }else{
                                 $BASE_URL_LIST=$subHref;
-                                return $this->StreamValue($BASE_URL_LIST,$BASE_URL);
+                                return $this->StreamValue($BASE_URL_LIST,$BASE_URL,$awal);
                             }
                         }else{
                             return $this->InvalidKey();
@@ -74,7 +79,7 @@ class StreamAnimeController extends Controller
             }
         }
 
-        public function StreamValue($BASE_URL_LIST,$BASE_URL){
+        public function StreamValue($BASE_URL_LIST,$BASE_URL,$awal){
             
             $client = new Client(['cookies' => new FileCookieJar('cookies.txt')]);
             $client->getConfig('handler')->push(CloudflareMiddleware::create());
@@ -102,7 +107,7 @@ class StreamAnimeController extends Controller
                     } 
                     $ListDetail = $node->filter('.animeInfo > ul')->html();
                     $SubDetail01 = explode("<b", $ListDetail);
-                    $SubDetail02=array(
+                    $SubDetail02 = array(
                         "Title" => substr($SubDetail01[1], strpos($SubDetail01[1], ":") + 1),
                         "JudulAlternatif" => substr($SubDetail01[2], strpos($SubDetail01[2], ":") + 1),
                         "Rating" => substr($SubDetail01[3], strpos($SubDetail01[3], ":") + 1),
@@ -153,18 +158,16 @@ class StreamAnimeController extends Controller
                 });
                 
                 if($cekServer){
-                    $ListServer = array();
-                    for($i=1;$i<count($SubMirror[0]);$i++){
-                        $ListServer[] = array(
-                            "NameServer" => trim($SubMirror[0][$i]['NameServer']),
-                            'IframeSrc' => ($SubMirror[0][$i]['IframeSrc']),
-                        );
-                    }
+                    
                     $LinkNowEpisode=substr($BASE_URL_LIST, strrpos($BASE_URL_LIST, '-' )+1);
                     $NowEpisode=str_replace("/","",$LinkNowEpisode);
-
-
+                    
+                    
+                    
                     $Title = strtok($SubListDetail[0]['subDetail']['Title'],'<');
+                    $Title = trim($Title);
+                    $GenreList = str_replace("</a>","| ",implode($SubListDetail[0]['genre']));
+                    $GenreList = trim($GenreList);
                     $Synopsis = trim($SubListDetail[0]['synopsis']);
                     $Tipe = "";
                     $Status = strtok($SubListDetail[0]['subDetail']['Status'], '<');
@@ -172,7 +175,11 @@ class StreamAnimeController extends Controller
                     $Score = strtok($SubListDetail[0]['subDetail']['Votes'], '<');
                     $Rating = strtok($SubListDetail[0]['subDetail']['Rating'], '<');
                     $Studio = "";
-                    $Episode=strtok($SubListDetail[0]['subDetail']['TotalEpisode'], '<');
+                    $Episode = trim(strtok($SubListDetail[0]['subDetail']['TotalEpisode'], '<'));
+                    $SlugEpisode = substr($BASE_URL_LIST, strrpos($BASE_URL_LIST, '/' )+1);
+                    $SlugEpisode = str_replace("-00","-",$SlugEpisode);
+                    $SlugEpisode = str_replace("-0","-",$SlugEpisode);
+                    $TipeMovie = (strstr($BASE_URL_LIST,'episode')) ? "episode" : "movie";
                     $Duration = "";
                     
                     $imageUrl=$SubListDetail[0]['image'][0];
@@ -198,31 +205,69 @@ class StreamAnimeController extends Controller
                     $valueEps=str_replace("episode","",$valueEps);
                     $filterValueEps=substr($valueEps, strpos($valueEps, '&') + 1);
                     $NowEpisode=$filterValueEps;
-                    $ListInfo = array(
-                        "Tipe" => $Tipe,
-                        "Status" => trim($Status),
-                        "Episode" => $NowEpisode,
-                        "Years" => $Years,
-                        "Score" => $Score,
-                        "Rating" => $Rating,
-                        "Studio" => $Studio,
-                        "Duration" => $Duration,
-                        "NextEpisode"=>$NextEpisode,
-                        "PrevEpisode"=>$PrevEpisode,
-                        "KeyListAnim" => $KeyListAnim
-                    );
-                    $ListDetail[]=array(
-                        "ListInfo" => $ListInfo,
-                        "Synopsis" => $Synopsis
-                    );
+                    
 
-                    $StreamAnime[] = array(
-                        "Title" => $Title,
-                        "Image" => $imageUrl,
-                        "ListDetail" => $ListDetail,
-                        "ListServer" => $ListServer
-                    );
-                    return $this->Success($StreamAnime);
+                    
+                    $code = ($TipeMovie == "movie") ? $SlugEpisode."-".$TipeMovie : $SlugEpisode;
+                    $SlugEpisode = ($TipeMovie == "movie") ? $SlugEpisode."-".$TipeMovie : $SlugEpisode;
+
+                    #Save List Episode
+                    $codeListAnime['code'] = md5(Str::slug($Title));
+                    $listAnime = MainModel::getDataListAnime($codeListAnime);
+                    $idListAnime = (empty($listAnime)) ? 0 : $listAnime[0]['id'];
+
+                    $codeLastUpdate['code'] = md5($code);
+                    $lastUpdate = MainModel::getDataLastUpdate($codeLastUpdate);
+                    $idLastUpdate = (empty($lastUpdate)) ? 0 : $lastUpdate[0]['id'];
+
+                    $codeDetailAnime['code'] = md5(Str::slug($Title));
+                    $detailAnime = MainModel::getDataDetailAnime($codeDetailAnime);
+                    $idDetailAnime = (empty($detailAnime)) ? 0 : $detailAnime[0]['id'];
+                    
+                    $paramCheck['code'] = md5($code);
+                    $checkExist = MainModel::getStreamAnime($paramCheck);
+
+                    if(empty($checkExist)){
+                        $Input = array(
+                            'code' => md5($code),
+                            'slug' => $SlugEpisode,
+                            'title' => $Title,
+                            'id_list_anime' => $idListAnime,
+                            'id_last_update' => $idLastUpdate,
+                            'id_list_episode' => "",
+                            'id_detail_anime' => $idDetailAnime,
+                            'next_episode' => $NextEpisode,
+                            'key_list_anime' => $KeyListAnim,
+                            'prev_episode' => $PrevEpisode,
+                            'cron_at' => Carbon::now()->format('Y-m-d H:i:s')
+                        );
+                        dd($Input);
+                        $save = MainModel::insertStreamAnimeMysql($Input);
+                        $checkExist = MainModel::getStreamAnime($paramCheck);
+                        
+                        $LogSave = $this->saveServerStream($SubMirror,$checkExist,$Title);
+    
+                    }else{
+                        $conditions['id'] = $checkExist[0]['id'];
+                        $Update = array(
+                            'code' => md5($code),
+                            'slug' => $SlugEpisode,
+                            'title' => $Title,
+                            'id_list_anime' => $idListAnime,
+                            'id_last_update' => $idLastUpdate,
+                            'id_list_episode' => "",
+                            'id_detail_anime' => $idDetailAnime,
+                            'next_episode' => $NextEpisode,
+                            'key_list_anime' => $KeyListAnim,
+                            'prev_episode' => $PrevEpisode,
+                            'cron_at' => Carbon::now()->format('Y-m-d H:i:s')
+                        );
+                        dd($Update);
+                        $save = MainModel::updateStreamAnimeMysql($Update,$conditions);
+                        $LogSave = $this->saveServerStream($SubMirror,$checkExist,$Title);
+                    }
+
+                    return $this->Success($save,$LogSave,$awal);
                 }else{
                     return $this->PageNotFound();
                 }
@@ -231,7 +276,44 @@ class StreamAnimeController extends Controller
             }
         }
 
-        public function Success($StreamAnime){
+        public static function saveServerStream($SubMirror,$checkExist,$Title){
+            $ListServer = array();
+            $idStreamAnime= $checkExist[0]['id'];
+            for($i=1;$i<count($SubMirror[0]);$i++){
+                $NameServer = trim($SubMirror[0][$i]['NameServer']);
+                $IframeSrc = ($SubMirror[0][$i]['IframeSrc']);
+                
+                $paramCheck['code'] = md5(Str::slug($NameServer));
+                $paramCheck['id_stream_anime'] = $idStreamAnime;
+                $checkExist1 = MainModel::getServerStream($paramCheck);
+                
+                if(empty($checkExist1)){
+                    $Input = array(
+                        'code' => md5(Str::slug($NameServer)),
+                        'name_server' => $NameServer,
+                        'iframe_src' => $IframeSrc,
+                        "id_stream_anime" => $idStreamAnime,
+                        'cron_at' => Carbon::now()->format('Y-m-d H:i:s')
+                    );
+                    $LogSave [] = "Data Save - ".$NameServer."-".$Title;
+                    $save = MainModel::insertServerStreamMysql($Input);
+                }else{
+                    $conditions['id'] = $checkExist1[0]['id'];
+                    $Update = array(
+                        'code' => md5(Str::slug($NameServer)),
+                        'name_server' => $NameServer,
+                        'iframe_src' => $IframeSrc,
+                        "id_stream_anime" => $idStreamAnime,
+                        'cron_at' => Carbon::now()->format('Y-m-d H:i:s')
+                    );
+                    $LogSave [] = "Data Update - ".$NameServer."-".$Title;
+                    $save = MainModel::updateServerStreamMysql($Update,$conditions);
+                }
+            }
+            return $LogSave;
+        }
+
+        public function Success($save,$LogSave,$awal){
             $API_TheMovie = array(
                 "API_TheMovieRs" =>array(
                     "Version" => "N.1",
@@ -241,10 +323,11 @@ class StreamAnimeController extends Controller
                     "Message" => array(
                         "Type" => "Info",
                         "ShortText" => "Success.",
+                        "Speed" => self::SpeedResponse($awal),
                         "Code" => 200
                     ),
-                    "Body" => array(
-                        "StreamAnime" => $StreamAnime
+                    "LogBody"=> array(
+                        "DataLog"=>$LogSave
                     )
                 )
             );
@@ -413,5 +496,14 @@ class StreamAnimeController extends Controller
                 return $haystack;
             }
             return substr($haystack, 0, $pos + 1);
+        }
+
+        public static function SpeedResponse($awal){
+            $akhir = microtime(true);
+            $durasi = $akhir - $awal;
+            $jam = (int)($durasi/60/60);
+            $menit = (int)($durasi/60) - $jam*60;
+            $detik = $durasi - $jam*60*60 - $menit*60;
+            return $kecepatan = number_format((float)$detik, 2, '.', '');
         }
 }
