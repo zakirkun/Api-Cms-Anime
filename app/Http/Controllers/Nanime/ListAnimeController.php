@@ -28,14 +28,14 @@ class ListAnimeController extends Controller
         $Users = MainModel::getUser($ApiKey);
         $Token = $Users[0]['token'];
         if($Token){
-            try{
+            // try{
                 $ConfigController = new ConfigController();
                 $BASE_URL_LIST=$ConfigController->BASE_URL_LIST_ANIME_1;
                 $BASE_URL=$ConfigController->BASE_URL_ANIME_1;
                 return $this->ListAnimeValue($BASE_URL_LIST,$BASE_URL,$awal);
-            }catch(\Exception $e){
-                return $this->InternalServerError();
-            }
+            // }catch(\Exception $e){
+            //     return $this->InternalServerError();
+            // }
             
         }else{
             return $this->InvalidToken();
@@ -207,39 +207,39 @@ class ListAnimeController extends Controller
                                 );
                             
                         }
-                        $paramCheck['code'] = md5(Str::slug($Title));
-                        $checkExist = MainModel::getDataListAnime($paramCheck);
-
-                        if(empty($checkExist)){
-                            $Input = array(
-                                'code' => md5(Str::slug($Title)),
-                                'slug' => Str::slug($Title),
-                                'title' => $Title,
-                                'key_list_anime' => $KeyListAnim,
-                                'name_index' => $NameIndexVal,
-                                'cron_at' => Carbon::now()->format('Y-m-d H:i:s')
-                            );
-                            $LogSave [] = "Data Save - ".$Title;
-                            $save = MainModel::insertListAnimeMysql($Input);
-                        }else{
-                            $conditions['id'] = $checkExist[0]['id'];
-                            $Update = array(
-                                'code' => md5(Str::slug($Title)),
-                                'slug' => Str::slug($Title),
-                                'title' => $Title,
-                                'key_list_anime' => $KeyListAnim,
-                                'name_index' => $NameIndexVal,
-                                'cron_at' => Carbon::now()->format('Y-m-d H:i:s')
-                            );
-                            $LogSave [] =  "Data Update - ".$Title;
-                            $save = MainModel::updateListAnimeMysql($Update,$conditions);
-                        }
+                        $Slug = Str::slug($Title);
+                        $code = $Slug;
+                        
+                        {#Save To List Anime
+                            $paramCheck['code'] = md5($code);
+                            $checkExist = MainModel::getDataListAnime($paramCheck);
+                            if(empty($checkExist)){
+                                $Input = array(
+                                    'code' => md5($code),
+                                    'slug' => $Slug,
+                                    'title' => $Title,
+                                    'key_list_anime' => $KeyListAnim,
+                                    'name_index' => $NameIndexVal,
+                                    'cron_at' => Carbon::now()->format('Y-m-d H:i:s')
+                                );
+                                $LogSave [] = "Data Save - ".$Title;
+                                $save = MainModel::insertListAnimeMysql($Input);
+                            }else{
+                                $conditions['id'] = $checkExist[0]['id'];
+                                $Update = array(
+                                    'code' => md5($code),
+                                    'slug' => $Slug,
+                                    'title' => $Title,
+                                    'key_list_anime' => $KeyListAnim,
+                                    'name_index' => $NameIndexVal,
+                                    'cron_at' => Carbon::now()->format('Y-m-d H:i:s')
+                                );
+                                $LogSave [] =  "Data Update - ".$Title;
+                                $save = MainModel::updateListAnimeMysql($Update,$conditions);
+                            }
+                        }#End Save To List Anime
                     }
                     
-                    // $ListAnime[]=array(
-                    //     "NameIndex"=>$NameIndexVal,
-                    //     "ListSubIndex"=>$ListSubIndex
-                    // );
                 }
                 
                 return $this->Success($save,$LogSave,$awal);

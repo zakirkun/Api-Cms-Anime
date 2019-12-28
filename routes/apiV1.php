@@ -9,7 +9,7 @@ $router->group(['prefix' => 'N/1', 'namespace' => 'Nanime'], function () use ($r
     $router->post('ListAnime', 'ListAnimeController@ListAnime');
     $router->post('GenreListAnime', 'GenreListAnimeController@GenreListAnime');
     // $router->post('SearchAnime', 'SearchAnimeControoler@SearchAnime');
-    $router->post('SingleListAnime', 'SingleListAnimeController@SingleListAnim');
+    $router->post('DetailListAnim', 'DetailListAnimeController@DetailListAnim');
     // $router->post('SearchGenreAnime', 'SearchGenreAnimeController@SearchGenreAnime');
     $router->post('TrandingWeekAnime', 'TrandingWeekAnimeController@TrandingWeekAnime');
     $router->post('StreamAnime', 'StreamAnimeController@StreamAnime');

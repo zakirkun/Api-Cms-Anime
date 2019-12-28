@@ -92,6 +92,8 @@ $app->register(App\Providers\EventServiceProvider::class);
 | can respond to, as well as the controllers that may handle them.
 |
 */
+class_alias('Illuminate\Support\Facades\Config', 'Config');
+$app->configure('cron/cron_config');
 
 $app->router->group([
     'namespace' => 'App\Http\Controllers',

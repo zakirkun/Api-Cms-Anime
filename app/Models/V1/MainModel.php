@@ -103,12 +103,14 @@ class MainModel extends Model
     #================  getDataLastUpdate ==================================
     static function getDataLastUpdate($params = []){
         $code = (isset($params['code']) ? $params['code'] : '');
+        $lastDate = (isset($params['last_date']) ? filter_var($params['last_date'], FILTER_VALIDATE_BOOLEAN) : FALSE);
         $tabel_name = 'last_update';
         ini_set('memory_limit','1024M');
         $query = DB::connection('application_db')
             ->table($tabel_name);
         
         if(!empty($code)) $query = $query->where('code', '=', $code);
+        if($lastDate) $query = $query->orderBy('cron_at', 'DESC');
         $query = $query->get();
 
         $result = [];
@@ -127,12 +129,26 @@ class MainModel extends Model
     #================  getDataListAnime ==================================
     static function getDataListAnime($params = []){
         $code = (isset($params['code']) ? $params['code'] : '');
+        $startByIndex = (isset($params['start_by_index']) ? $params['start_by_index'] : '');
+        $EndByIndex = (isset($params['end_by_index']) ? $params['end_by_index'] : '');
+        $startDate = (isset($params['start_date']) ? $params['start_date'] : '');
+        $endDate = (isset($params['end_date']) ? $params['end_date'] : '');
+
         $tabel_name = 'list_anime';
         ini_set('memory_limit','1024M');
         $query = DB::connection('application_db')
             ->table($tabel_name);
         
         if(!empty($code)) $query = $query->where('code', '=', $code);
+        if(!empty($startByIndex)) $query = $query->where('name_index', 'Like', "%".$startByIndex);
+        if(!empty($EndByIndex)){
+            $alphas = range($startByIndex, $EndByIndex);
+            for($i = 0;$i<count($alphas); $i++){
+                $query = $query->orWhere('name_index', 'Like', "%".$alphas[$i]);  
+            }
+        } 
+        if(!empty($startDate)) $query = $query->where('cron_at', '<', $startDate);
+        if(!empty($endDate)) $query = $query->where('cron_at', '>', $endDate);
         $query = $query->get();
 
         $result = [];
@@ -528,10 +544,10 @@ class MainModel extends Model
      * @author [Prayugo]
      * @create date 2019-12-13 22:28:51
      * @modify date 2019-12-13 22:28:51
-     * @desc function getDataListEpisoeAnime
+     * @desc function getDataListEpisodeAnime
      */
-    #================  getDataListEpisoeAnime ==================================
-    public static function getDataListEpisoeAnime($params = []){
+    #================  getDataListEpisodeAnime ==================================
+    public static function getDataListEpisodeAnime($params = []){
         $code = (isset($params['code']) ? $params['code'] : '');
         $tabel_name = 'list_episode';
         ini_set('memory_limit','1024M');
@@ -545,7 +561,7 @@ class MainModel extends Model
         if(count($query)) $result = collect($query)->map(function($x){ return (array) $x; })->toArray();
         return $result;
     }
-    #================ End getDataListEpisoeAnime ==================================
+    #================ End getDataListEpisodeAnime ==================================
     
     /**
      * @author [Prayugo]

@@ -22,9 +22,14 @@ use App\Models\V1\MainModel as MainModel;
 // done tinggal token
 class TrandingWeekAnimeController extends Controller
 {
-    public function TrandingWeekAnime(Request $request){
+    public function TrandingWeekAnime(Request $request = NULL, $params = NULL){
         $awal = microtime(true);
-        $ApiKey=$request->header("X-API-KEY");
+        if(!empty($request) || $request != NULL){
+            $ApiKey = $request->header("X-API-KEY");
+        }
+        if(!empty($params) || $params != NULL){
+            $ApiKey = (isset($params['params']['X-API-KEY']) ? strtolower($params['params']['X-API-KEY']) : '');
+        }
         $Users = MainModel::getUser($ApiKey);
         $Token = $Users[0]['token'];
         if($Token){
@@ -145,8 +150,10 @@ class TrandingWeekAnimeController extends Controller
                 
                 if($TopListDetail){
                     for($i=0;$i<count($TopListDetail[0]);$i++){
+                        $href = $BASE_URL."".$TopListDetail[0][$i]['href'];
+                        $hrefKeyListAnim = $href;
                         $KeyListAnimEnc=array(
-                            "href"=>$BASE_URL."".$TopListDetail[0][$i]['href'],
+                            "href"=> $href,
                             "Image"=>$TopListDetail[0][$i]['image'],
                             "Title"=>$TopListDetail[0][$i]['title']
                         );
@@ -163,41 +170,89 @@ class TrandingWeekAnimeController extends Controller
                         $Title = trim($Title);
                         $Image = $TopListDetail[0][$i]['image'];
                         $Status = preg_replace('/(\v|\s)+/', ' ', $TopListDetail[0][$i]['status']);
-                        $paramCheck['code'] = md5(Str::slug($Title));
-                        $codeListAnime['code'] = md5(Str::slug($Title));
-                        $checkExist = MainModel::getDataTrendingWeek($paramCheck);
-                        $listAnime = MainModel::getDataListAnime($codeListAnime);
-                        $idListAnime = (empty($listAnime)) ? 0 : $listAnime[0]['id'];
-                        if(empty($checkExist)){
-                            $Input = array(
-                                "image" => $Image,
-                                "title" => $Title,
-                                "title_alias" => $Title,
-                                "status" => $Status,
-                                'slug' => Str::slug($Title),
-                                'key_list_anime' => $KeyListAnim,
-                                'id_list_anime' => $idListAnime,
-                                'code' => md5(Str::slug($Title)),
-                                'cron_at' => Carbon::now()->format('Y-m-d H:i:s')
-                            );
-                            $LogSave [] = "Data Save - ".$Title." ".Carbon::now()->format('Y-m-d H:i:s');
-                            $save = MainModel::insertTrendingWeekMysql($Input);
-                        }else{
-                            $conditions['id'] = $checkExist[0]['id'];
-                            $Update = array(
-                                "image" => $Image,
-                                "title" => $Title,
-                                "title_alias" => $Title,
-                                "status" => $Status,
-                                'slug' => Str::slug($Title),
-                                'key_list_anime' => $KeyListAnim,
-                                'id_list_anime' => $idListAnime,
-                                'code' => md5(Str::slug($Title)),
-                                'cron_at' => Carbon::now()->format('Y-m-d H:i:s')
-                            );
-                            $LogSave [] =  "Data Update - ".$Title." ".Carbon::now()->format('Y-m-d H:i:s');
-                            $save = MainModel::updateTrendingWeekMysql($Update,$conditions);
-                        }
+
+                        {#save To mysql
+                            $slug = Str::slug($Title);
+                            $code = $slug;
+
+                            {#save to list Anime
+                                $codeListAnime['code'] = md5($code);
+                                $listAnime = MainModel::getDataListAnime($codeListAnime);
+                                $idListAnime = (empty($listAnime)) ? 0 : $listAnime[0]['id'];
+                                if(empty($listAnime) || $idListAnime == 0){
+                                    $KeyListAnimEnc= array(
+                                        "Title"=>trim($Title),
+                                        "Image"=>"",
+                                        "Type"=>"",
+                                        "href"=>$hrefKeyListAnim
+                                    );
+                                    $KeyListAnim = self::encodeKeyLiatAnime($KeyListAnimEnc);
+                                    if(empty($listAnime)){
+                                        $Input = array(
+                                            'code' => md5($code),
+                                            'slug' => $slug,
+                                            'title' => $Title,
+                                            'key_list_anime' => $KeyListAnim,
+                                            'name_index' => "#".substr(ucfirst($Title), 0, 1),
+                                            'cron_at' => Carbon::now()->format('Y-m-d H:i:s')
+                                        );
+                                        $save = MainModel::insertListAnimeMysql($Input);
+                                        
+                                    }else{
+                                        $conditions['id'] = $idListAnime;
+                                        $Update = array(
+                                            'code' => md5($code),
+                                            'slug' => $slug,
+                                            'title' => $Title,
+                                            'key_list_anime' => $KeyListAnim,
+                                            'name_index' => "#".substr(ucfirst($Title), 0, 1),
+                                            'cron_at' => Carbon::now()->format('Y-m-d H:i:s')
+                                        );
+                                        $save = MainModel::updateListAnimeMysql($Update,$conditions);
+                                    }
+                                    $codeListAnime['code'] = md5($cdListAnime);
+                                    $listAnime = MainModel::getDataListAnime($codeListAnime);
+                                    $idListAnime = (empty($listAnime)) ? 0 : $listAnime[0]['id'];
+                                }
+                            }#save to list Anime
+
+                            {#save to tranding Week
+                                $paramCheck['code'] = md5($code);
+                                $checkExist = MainModel::getDataTrendingWeek($paramCheck);
+                                if(empty($checkExist)){
+                                    $Input = array(
+                                        'code' => md5($code),
+                                        'slug' => $slug,
+                                        "image" => $Image,
+                                        "title" => $Title,
+                                        "title_alias" => $Title,
+                                        "status" => $Status,
+                                        'key_list_anime' => $KeyListAnim,
+                                        'id_list_anime' => $idListAnime,
+                                        'cron_at' => Carbon::now()->format('Y-m-d H:i:s')
+                                    );
+                                    $LogSave [] = "Data Save - ".$Title." ".Carbon::now()->format('Y-m-d H:i:s');
+                                    $save = MainModel::insertTrendingWeekMysql($Input);
+                                }else{
+                                    $conditions['id'] = $checkExist[0]['id'];
+                                    $Update = array(
+                                        'code' => md5($code),
+                                        'slug' => $slug,
+                                        "image" => $Image,
+                                        "title" => $Title,
+                                        "title_alias" => $Title,
+                                        "status" => $Status,
+                                        'key_list_anime' => $KeyListAnim,
+                                        'id_list_anime' => $idListAnime,
+                                        'cron_at' => Carbon::now()->format('Y-m-d H:i:s')
+                                    );
+                                    $LogSave [] =  "Data Update - ".$Title." ".Carbon::now()->format('Y-m-d H:i:s');
+                                    $save = MainModel::updateTrendingWeekMysql($Update,$conditions);
+                                }
+                            }#save to tranding Week
+
+                        }#End save To mysql
+                        
                         
 
                     }
@@ -208,6 +263,16 @@ class TrandingWeekAnimeController extends Controller
             }else{
                 return $this->PageNotFound();
             }
+    }
+
+    public static function encodeKeyLiatAnime($KeyListAnimEnc){
+        $result = base64_encode(json_encode($KeyListAnimEnc));
+        $result = str_replace("=", "QRCAbuK", $result);
+        $iduniq0 = substr($result, 0, 10);
+        $iduniq1 = substr($result, 10, 500);
+        $result = $iduniq0 . "QWTyu" . $iduniq1;
+        $KeyListAnim = $result;
+        return $KeyListAnim;
     }
 
     public static function SpeedResponse($awal){

@@ -163,32 +163,36 @@ class GenreListAnimeController extends Controller
                             $result = $iduniq0 . "RqWtY" . $iduniq1;
                             $KeyListGenre = $result;
                             $Genre = $GenreListAnimeS[0]['subGenre'][$j]['genre'];
-                            $paramCheck['code'] = md5(Str::slug($Genre));
-                            $checkExist = MainModel::getDataListGenre($paramCheck);
-                            if(empty($checkExist)){
-                                $Input = array(
-                                    'slug' => Str::slug($Genre),
-                                    "code" => md5(Str::slug($Genre)),
-                                    "name_index" => $NameIndex[$i],
-                                    "genre" => $Genre,
-                                    "key_list_genre" => $KeyListGenre,
-                                    'cron_at' => Carbon::now()->format('Y-m-d H:i:s')
-                                );
-                                $LogSave [] = "Data Save - ".$Genre."-".Carbon::now()->format('Y-m-d H:i:s');
-                                $save = MainModel::insertGenreListAnimeMysql($Input);
-                            }else{
-                                $conditions['id'] = $checkExist[0]['id'];
-                                $Update = array(
-                                    'slug' => Str::slug($Genre),
-                                    "code" => md5(Str::slug($Genre)),
-                                    "name_index" => $NameIndex[$i],
-                                    "genre" => $Genre,
-                                    "key_list_genre" => $KeyListGenre,
-                                    'cron_at' => Carbon::now()->format('Y-m-d H:i:s')
-                                );
-                                $LogSave [] = "Data Update - ".$Genre."-".Carbon::now()->format('Y-m-d H:i:s');
-                                $save = MainModel::updateGenreListAnimeMysql($Update,$conditions);
-                            }
+                            
+                            {#Save Data List Genre
+                                $code = Str::slug($Genre);
+                                $paramCheck['code'] = md5($code);
+                                $checkExist = MainModel::getDataListGenre($paramCheck);
+                                if(empty($checkExist)){
+                                    $Input = array(
+                                        "code" => md5($code),
+                                        'slug' => Str::slug($Genre),
+                                        "name_index" => $NameIndex[$i],
+                                        "genre" => $Genre,
+                                        "key_list_genre" => $KeyListGenre,
+                                        'cron_at' => Carbon::now()->format('Y-m-d H:i:s')
+                                    );
+                                    $LogSave [] = "Data Save - ".$Genre."-".Carbon::now()->format('Y-m-d H:i:s');
+                                    $save = MainModel::insertGenreListAnimeMysql($Input);
+                                }else{
+                                    $conditions['id'] = $checkExist[0]['id'];
+                                    $Update = array(
+                                        "code" => md5($code),
+                                        'slug' => Str::slug($Genre),
+                                        "name_index" => $NameIndex[$i],
+                                        "genre" => $Genre,
+                                        "key_list_genre" => $KeyListGenre,
+                                        'cron_at' => Carbon::now()->format('Y-m-d H:i:s')
+                                    );
+                                    $LogSave [] = "Data Update - ".$Genre."-".Carbon::now()->format('Y-m-d H:i:s');
+                                    $save = MainModel::updateGenreListAnimeMysql($Update,$conditions);
+                                }
+                            }#End Data List Genre
                             
                         }
                     }

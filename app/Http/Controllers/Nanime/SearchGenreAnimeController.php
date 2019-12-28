@@ -11,8 +11,9 @@ use \GuzzleHttp\Cookie\FileCookieJar;
 use \GuzzleHttp\Psr7;
 use \Carbon\Carbon;
 use \Sunra\PhpSimple\HtmlDomParser;
-use Illuminate\Support\Facades\DB;
 
+#Load Models V1
+use App\Models\V1\MainModel as MainModel;
 
 class SearchGenreAnimeController extends Controller
 {
@@ -21,7 +22,8 @@ class SearchGenreAnimeController extends Controller
         $ApiKey=$request->header("X-API-KEY");
         $KeyListGenre=$request->header("KeyListGenre");
         $PageNumber=$request->header("PageNumber") ? $request->header("PageNumber") : 1;
-        $Token = DB::table('User')->where('token',$ApiKey)->first();
+        $Users = MainModel::getUser($ApiKey);
+        $Token = $Users[0]['token'];
         if($Token){
             try{
                 $findCode=strstr($KeyListGenre,'RqWtY');

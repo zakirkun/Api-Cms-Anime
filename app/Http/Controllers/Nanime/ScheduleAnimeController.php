@@ -164,10 +164,11 @@ class ScheduleAnimeController extends Controller
                     $NameDay=($nodeValues[$i]['NameDay']);
                     $ListSubIndex=array();
                     for($j=0;$j<count($nodeValues[$i]['List'][0]);$j++){
+                        $href = $BASE_URL."".$nodeValues[$i]['List'][0][$j]['href'];
                         $KeyListAnimEnc= array(
                             "Title"=>$nodeValues[$i]['List'][0][$j]['title'],
                             "Image"=>$nodeValues[$i]['List'][0][$j]['image'],
-                            "href"=>$BASE_URL."".$nodeValues[$i]['List'][0][$j]['href'],
+                            "href"=>$href,
                         );
                         $KeyListAnim = $this->EncriptKeyListAnim($KeyListAnimEnc);
                         $Image = $nodeValues[$i]['List'][0][$j]['image'];
@@ -175,48 +176,90 @@ class ScheduleAnimeController extends Controller
                         $Title = str_replace("(TV)", "", $Title);
                         $Title = trim($Title);
                         $TitleAlias = $nodeValues[$i]['List'][0][$j]['TitleAlias'];
-                        
-                        $paramCheck['code'] = md5(Str::slug($Title));
-                        $codeListAnime['code'] = md5(Str::slug($Title));
-                        $checkExist = MainModel::getDataScheduleAnime($paramCheck);
-                        $listAnime = MainModel::getDataListAnime($codeListAnime);
-                        $idListAnime = (empty($listAnime)) ? 0 : $listAnime[0]['id'];
 
-                        if(empty($checkExist)){
-                            $Input = array(
-                                'code' => md5(Str::slug($Title)),
-                                'slug' => Str::slug($Title),
-                                'name_day' => $NameDay,
-                                'title' => $Title,
-                                'title_alias' => $TitleAlias,
-                                'image' => $Image,
-                                'key_list_anime' => $KeyListAnim,
-                                'id_list_anime' => $idListAnime,
-                                'cron_at' => Carbon::now()->format('Y-m-d H:i:s')
-                            );
-                            
-                            $LogSave [] = "Data Save - ".$Title;
-                            $save = MainModel::insertScheduleMysql($Input);
-                        }else{
-                            $conditions['id'] = $checkExist[0]['id'];
-                            $Update = array(
-                                'code' => md5(Str::slug($Title)),
-                                'slug' => Str::slug($Title),
-                                'name_day' => $NameDay,
-                                'title' => $Title,
-                                'title_alias' => $TitleAlias,
-                                'image' => $Image,
-                                'key_list_anime' => $KeyListAnim,
-                                'id_list_anime' => $idListAnime,
-                                'cron_at' => Carbon::now()->format('Y-m-d H:i:s')
-                            );
-                            $LogSave [] =  "Data Update - ".$Title;
-                            $save = MainModel::updateScheduleWeekMysql($Update,$conditions);
-                        }
-                        
+                        {#Query Save to Mysql
+                            $Slug = Str::slug($Title);
+                            $code = $Slug;
+
+                            {#Save to List Anime
+                                $codeListAnime['code'] = md5($code);
+                                $listAnime = MainModel::getDataListAnime($codeListAnime);
+                                $idListAnime = (empty($listAnime)) ? 0 : $listAnime[0]['id'];
+                                if(empty($listAnime) || $idListAnime == 0){
+                                    $slugListAnime = $Slug;
+                                    $KeyListAnimEnc= array(
+                                        "Title"=>trim($Title),
+                                        "Image"=>"",
+                                        "Type"=>"",
+                                        "href"=>$href
+                                    );
+                                    $KeyListAnim = self::encodeKeyLiatAnime($KeyListAnimEnc);
+                                    if(empty($listAnime)){
+                                        $Input = array(
+                                            'code' => md5($cdListAnime),
+                                            'slug' => $slugListAnime,
+                                            'title' => $Title,
+                                            'key_list_anime' => $KeyListAnim,
+                                            'name_index' => "#".substr(ucfirst($Title), 0, 1),
+                                            'cron_at' => Carbon::now()->format('Y-m-d H:i:s')
+                                        );
+                                        $save = MainModel::insertListAnimeMysql($Input);
+                                    }else{
+                                        $conditions['id'] = $idListAnime;
+                                        $Update = array(
+                                            'code' => md5($cdListAnime),
+                                            'slug' => $slugListAnime,
+                                            'title' => $Title,
+                                            'key_list_anime' => $KeyListAnim,
+                                            'name_index' => "#".substr(ucfirst($Title), 0, 1),
+                                            'cron_at' => Carbon::now()->format('Y-m-d H:i:s')
+                                        );
+                                        $save = MainModel::updateListAnimeMysql($Update,$conditions);
+                                        $codeListAnime['code'] = md5($cdListAnime);
+                                        $listAnime = MainModel::getDataListAnime($codeListAnime);
+                                        $idListAnime = (empty($listAnime)) ? 0 : $listAnime[0]['id'];
+                                    }
+                                }
+                            }#End Save to List Anime
+
+                            {#Save to schedule Anime
+                                $paramCheck['code'] = md5($code);
+                                $checkExist = MainModel::getDataScheduleAnime($paramCheck);
+                                if(empty($checkExist)){
+                                    $Input = array(
+                                        'code' => md5($code),
+                                        'slug' => $Slug,
+                                        'name_day' => $NameDay,
+                                        'title' => $Title,
+                                        'title_alias' => $TitleAlias,
+                                        'image' => $Image,
+                                        'key_list_anime' => $KeyListAnim,
+                                        'id_list_anime' => $idListAnime,
+                                        'cron_at' => Carbon::now()->format('Y-m-d H:i:s')
+                                    );
+                                    
+                                    $LogSave [] = "Data Save - ".$Title;
+                                    $save = MainModel::insertScheduleMysql($Input);
+                                }else{
+                                    $conditions['id'] = $checkExist[0]['id'];
+                                    $Update = array(
+                                        'code' => md5($code),
+                                        'slug' => $Slug,
+                                        'name_day' => $NameDay,
+                                        'title' => $Title,
+                                        'title_alias' => $TitleAlias,
+                                        'image' => $Image,
+                                        'key_list_anime' => $KeyListAnim,
+                                        'id_list_anime' => $idListAnime,
+                                        'cron_at' => Carbon::now()->format('Y-m-d H:i:s')
+                                    );
+                                    $LogSave [] =  "Data Update - ".$Title;
+                                    $save = MainModel::updateScheduleWeekMysql($Update,$conditions);
+                                }
+                            }#End Save to schedule Anime
+
+                        }#End Query Save to Mysql
                     }
-                    
-                    
                 }
                 return $this->Success($save,$LogSave,$awal);
             }else{
@@ -225,6 +268,16 @@ class ScheduleAnimeController extends Controller
         }else{
             return $this->PageNotFound();
         }
+    }
+
+    public static function encodeKeyLiatAnime($KeyListAnimEnc){
+        $result = base64_encode(json_encode($KeyListAnimEnc));
+        $result = str_replace("=", "QRCAbuK", $result);
+        $iduniq0 = substr($result, 0, 10);
+        $iduniq1 = substr($result, 10, 500);
+        $result = $iduniq0 . "QWTyu" . $iduniq1;
+        $KeyListAnim = $result;
+        return $KeyListAnim;
     }
 
     public static function SpeedResponse($awal){
