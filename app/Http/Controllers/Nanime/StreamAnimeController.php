@@ -22,14 +22,20 @@ use App\Models\V1\MainModel as MainModel;
 class StreamAnimeController extends Controller
 {
     // keyEpisode
-        public function StreamAnime(Request $request){
+        public function StreamAnime(Request $request = NULL, $params = NULL){
             $awal = microtime(true);
-            $ApiKey=$request->header("X-API-KEY");
-            $KeyEpisode=$request->header("KeyEpisode");
+            if(!empty($request) || $request != NULL){
+                $ApiKey = $request->header("X-API-KEY");
+                $KeyEpisode = $request->header("KeyEpisode");
+            }
+            if(!empty($params) || $params != NULL){
+                $ApiKey = (isset($params['params']['X-API-KEY']) ? ($params['params']['X-API-KEY']) : '');
+                $KeyEpisode = (isset($params['params']['KeyEpisode']) ? ($params['params']['KeyEpisode']) : '');
+            }
             $Users = MainModel::getUser($ApiKey);
             $Token = $Users[0]['token'];
-            $NextEpisode = $request->header("NextEpisode");
-            $PrevEpisode = $request->header("PrevEpisode");
+            $NextEpisode = "";
+            $PrevEpisode = "";
             if($Token){
                 // try{
                     $findCode=strstr($KeyEpisode,'QtYWL');
@@ -163,6 +169,7 @@ class StreamAnimeController extends Controller
                         $LinkNowEpisode=substr($BASE_URL_LIST, strrpos($BASE_URL_LIST, '-' )+1);
                         $NowEpisode=str_replace("/","",$LinkNowEpisode);
                         
+                        
                         $Title = strtok($SubListDetail[0]['subDetail']['Title'],'<');
                         $Title = trim($Title);
                         $GenreList = str_replace("</a>","| ",implode($SubListDetail[0]['genre']));
@@ -190,11 +197,11 @@ class StreamAnimeController extends Controller
                             $HrefNext = $BASE_URL."".$PaginationEpisode[0][2]['hrefPegination'];
                         }else{
                             $HrefPrev = "";
-                            $HrefSingleList= "";
+                            $HrefSingleList= $BASE_URL_LIST;
                             $HrefNext = "";
                         }
                         $NextEpisode = $this->EncriptPaginationEps($HrefNext);
-                        $KeyListAnim = $this->EncriptKeyListAnim($HrefSingleList); 
+                        $KeyListAnim = $this->EncriptKeyListAnim(trim($Title),$HrefSingleList); 
                         $PrevEpisode = $this->EncriptPaginationEps($HrefPrev); 
                         if(empty($HrefPrev)){
                             $PrevEpisode="";
@@ -211,7 +218,8 @@ class StreamAnimeController extends Controller
                     {#cek query Relasi
 
                         {# Save List Anime
-                            $codeListAnime['code'] = md5(Str::slug($Title));
+                            $cdListAnime = Str::slug($Title);
+                            $codeListAnime['code'] = md5($cdListAnime);
                             $listAnime = MainModel::getDataListAnime($codeListAnime);
                             $idListAnime = (empty($listAnime)) ? 0 : $listAnime[0]['id'];
 
@@ -250,161 +258,96 @@ class StreamAnimeController extends Controller
                                 $idListAnime = (empty($listAnime)) ? 0 : $listAnime[0]['id'];
                             }
                         }#End List Anime
-
-                        {#Save DetailAnime
-                            $codeDetailAnime['code'] = md5(Str::slug($Title));
-                            $detailAnime = MainModel::getDataDetailAnime($codeDetailAnime);
-                            $idDetailAnime = (empty($detailAnime)) ? 0 : $detailAnime[0]['id'];
-                            if(empty($detailAnime) || $idDetailAnime == 0){
-                                if(empty($detailAnime)){
-                                    $Input = array(
-                                        'code' => md5(Str::slug($Title)),
-                                        'slug' => Str::slug($Title),
-                                        'title' => $Title,
-                                        'image' => $imageUrl,
-                                        'tipe' => $Tipe,
-                                        'genre' => "",
-                                        'status' => $Status,
-                                        'episode_total' => $Episode,
-                                        'years' => $Years,
-                                        'score' => $Score,
-                                        'rating' => $Rating,
-                                        'studio' => $Studio,
-                                        'duration' => $Duration,
-                                        'synopsis' => trim($Synopsis),
-                                        'id_list_anime' => $idListAnime,
-                                        
-                                        'cron_at' => Carbon::now()->format('Y-m-d H:i:s')
-                                    );
-                                    $save = MainModel::insertDetailMysql($Input);
-                                }else{
-                                    $conditions['id'] = $idDetailAnime;
-                                    $Update = array(
-                                        'code' => md5(Str::slug($Title)),
-                                        'slug' => Str::slug($Title),
-                                        'title' => $Title,
-                                        'image' => $imageUrl,
-                                        'tipe' => $Tipe,
-                                        'genre' => $GenreList,
-                                        'status' => $Status,
-                                        'episode_total' => $Episode,
-                                        'years' => $Years,
-                                        'score' => $Score,
-                                        'rating' => $Rating,
-                                        'studio' => $Studio,
-                                        'duration' => $Duration,
-                                        'synopsis' => trim($Synopsis),
-                                        'id_list_anime' => $idListAnime,
-                                        
-                                        'cron_at' => Carbon::now()->format('Y-m-d H:i:s')
-                                    );
-                                    $save = MainModel::updateDetailMysql($Update,$conditions);
-                                }
-                                $codeDetailAnime['code'] = md5(Str::slug($Title));
-                                $detailAnime = MainModel::getDataDetailAnime($codeDetailAnime);
-                                $idDetailAnime = (empty($detailAnime)) ? 0 : $detailAnime[0]['id'];
-                            }
-                        }#End DetailAnime
-
-                        {#Save List Episode
-                            $codeListEpAnime['code'] = md5($SlugEpisode);
-                            $listEpAnime = MainModel::getDataListEpisodeAnime($codeListEpAnime);
-                            $idListEpAnime = (empty($listEpAnime)) ? 0 : $listEpAnime[0]['id'];
-                            if(empty($listEpAnime)|| $idListEpAnime == 0){
-                                $KeyEpisodeEnc = array(
-                                    "Title"=> $Title,
-                                    "Image"=>$imageUrl,
-                                    "Status" => $Status,
-                                    "href"=>$BASE_URL_LIST,
-                                    "Episode"=>$NowEpisode,
-                                    
+                        
+                        {#save to detail anime and list episode
+                            
+                            $codeListEps['code'] = md5($SlugEpisode);
+                            $codeDetailAnime['code'] = md5($cdListAnime);
+                            $SlugDetailAnime = $cdListAnime;
+                            $DetailAnime = MainModel::getDataDetailAnime($codeDetailAnime);
+                            $ListEpisodeAnime = MainModel::getDataListEpisodeAnime($codeListEps);
+                            $idDetailAnime = (empty($DetailAnime)) ? 0 : $DetailAnime[0]['id'];
+                            $idListEpisode = (empty($ListEpisodeAnime)) ? 0 : $ListEpisodeAnime[0]['id'];
+                            if(empty($DetailAnime) || $idDetailAnime == 0 || $idListEpisode == 0 || empty($ListEpisodeAnime) ){
+                                $KeyListAnimEnc= array(
+                                    "Title"=>trim($Title),
+                                    "Image"=>"",
+                                    "Type"=>"",
+                                    "href"=>$hrefKeyListAnim[$i]
                                 );
-                                if(empty($listEpAnime)){
-                                    $KeyEpisode = self::encodeKeyListEpisode($KeyEpisodeEnc);
-                                    $Input = array(
-                                        'code' => md5($code),
-                                        'slug' => $SlugEpisode,
-                                        "episode" => $Episode,
-                                        'key_episode' => $KeyEpisode,
-                                        'id_list_anime' => $idListAnime,
-                                        'id_detail_anime' => $idDetailAnime,
-                                        'cron_at' => Carbon::now()->format('Y-m-d H:i:s')
-                                    );
-                                    $save = MainModel::insertListEpisodelMysql($Input);
-                                    
-                                }else{
-                                    $conditions['id'] = $idListEpAnime;
-                                    $Update = array(
-                                        'code' => md5($code),
-                                        'slug' => $SlugEpisode,
-                                        "episode" => $Episode,
-                                        'key_episode' => $KeyEpisode,
-                                        'id_list_anime' => $idListAnime,
-                                        'id_detail_anime' => $idDetailAnime,
-                                        'cron_at' => Carbon::now()->format('Y-m-d H:i:s')
-                                    );
-                                    $save = MainModel::updateListEpisodeMysql($Update,$conditions);
-                                }
-                                $codeListEpAnime['code'] = md5($SlugEpisode);
-                                $listEpAnime = MainModel::getDataListEpisodeAnime($codeListEpAnime);
-                                $idListEpAnime = (empty($listEpAnime)) ? 0 : $listEpAnime[0]['id'];
-                                
+                                $KeyListAnim = self::encodeKeyListAnime($KeyListAnimEnc);
+                                $listDataAnime = [
+                                    'params' => [
+                                        'X-API-KEY' => env('X_API_KEY',''),
+                                        'KeyListAnim' => $KeyListAnim
+                                    ]
+                                ];
+                                $dataDetailAnime = $this->DetailListAnimeController->DetailListAnim(NULL,$listDataAnime);
+                                $codeDetailAnime['code'] = md5($cdListAnime);
                                 
                             }
-                        }#End List Episode
+                            
+                            $codeListEps['code'] = md5($SlugEpisode);
+                            $codeDetailAnime['code'] = md5($cdListAnime);
+                            $SlugDetailAnime = $cdListAnime;
+                            $DetailAnime = MainModel::getDataDetailAnime($codeDetailAnime);
+                            $ListEpisodeAnime = MainModel::getDataListEpisodeAnime($codeListEps);
+                            $idDetailAnime = (empty($DetailAnime)) ? 0 : $DetailAnime[0]['id'];
+                            $idListEpisode = (empty($ListEpisodeAnime)) ? 0 : $ListEpisodeAnime[0]['id'];
+                        }#End #save to detail anime and list episode
 
                         {#Save Last Update
-                            $codeLastUpdate['code'] = md5($code);
-                            $lastUpdate = MainModel::getDataLastUpdate($codeLastUpdate);
-                            $idLastUpdate = (empty($lastUpdate)) ? 0 : $lastUpdate[0]['id'];
-                            if(empty($lastUpdate) || $idLastUpdate == 0){
-                                $KeyEpisodeEnc=array(
-                                    "href" => $BASE_URL_LIST,
-                                    "Image" => $imageUrl,
-                                    "Title" => $Title,
-                                    "Status" => $Status,
-                                    "Episode" => $NowEpisode
-                                );
-                                $KeyEpisode = self::encodeKeyListEpisode($KeyEpisodeEnc);
-                                if(empty($lastUpdate)){
-                                    $Input = array(
-                                        "image" => $imageUrl,
-                                        "title" => $Title,
-                                        "title_alias" => $Title,
-                                        "status" => $Status,
-                                        "episode" => $NowEpisode,
-                                        "keyepisode" => $KeyEpisode,
-                                        'total_search_page' => "",
-                                        'page_search' => "",
-                                        'slug' => $SlugEpisode,
-                                        'id_list_anime' => $idListAnime,
-                                        'code' => md5($code),
-                                        'cron_at' => Carbon::now()->format('Y-m-d H:i:s')
-                                    );
-                                    $save = MainModel::insertLastUpdateMysql($Input);
-                                }else{
-                                    $conditions['id'] = $idLastUpdate;
-                                    $Update = array(
-                                        "image" => $imageUrl,
-                                        "title" => $Title,
-                                        "title_alias" => $Title,
-                                        "status" => $Status,
-                                        "episode" => $NowEpisode,
-                                        "keyepisode" => $KeyEpisode,
-                                        'total_search_page' => "",
-                                        'page_search' => "",
-                                        'slug' => $SlugEpisode,
-                                        'id_list_anime' => $idListAnime,
-                                        'code' => md5($code),
-                                        'cron_at' => Carbon::now()->format('Y-m-d H:i:s')
-                                    );
-                                    $save = MainModel::updateLastUpdateMysql($Update,$conditions);
-                                }
-                                $codeLastUpdate['code'] = md5($code);
-                                $lastUpdate = MainModel::getDataLastUpdate($codeLastUpdate);
-                                $idLastUpdate = (empty($lastUpdate)) ? 0 : $lastUpdate[0]['id'];
+                            // $codeLastUpdate['code'] = md5($code);
+                            // $lastUpdate = MainModel::getDataLastUpdate($codeLastUpdate);
+                            // $idLastUpdate = (empty($lastUpdate)) ? 0 : $lastUpdate[0]['id'];
+                            // if(empty($lastUpdate) || $idLastUpdate == 0){
+                            //     $KeyEpisodeEnc=array(
+                            //         "href" => $BASE_URL_LIST,
+                            //         "Image" => $imageUrl,
+                            //         "Title" => $Title,
+                            //         "Status" => $Status,
+                            //         "Episode" => $NowEpisode
+                            //     );
+                            //     $KeyEpisode = self::encodeKeyListEpisode($KeyEpisodeEnc);
+                            //     if(empty($lastUpdate)){
+                            //         $Input = array(
+                            //             "image" => $imageUrl,
+                            //             "title" => $Title,
+                            //             "title_alias" => $Title,
+                            //             "status" => $Status,
+                            //             "episode" => $NowEpisode,
+                            //             "keyepisode" => $KeyEpisode,
+                            //             'total_search_page' => "",
+                            //             'page_search' => "",
+                            //             'slug' => $SlugEpisode,
+                            //             'id_list_anime' => $idListAnime,
+                            //             'code' => md5($code),
+                            //             'cron_at' => Carbon::now()->format('Y-m-d H:i:s')
+                            //         );
+                            //         $save = MainModel::insertLastUpdateMysql($Input);
+                            //     }else{
+                            //         $conditions['id'] = $idLastUpdate;
+                            //         $Update = array(
+                            //             "image" => $imageUrl,
+                            //             "title" => $Title,
+                            //             "title_alias" => $Title,
+                            //             "status" => $Status,
+                            //             "episode" => $NowEpisode,
+                            //             "keyepisode" => $KeyEpisode,
+                            //             'total_search_page' => "",
+                            //             'page_search' => "",
+                            //             'slug' => $SlugEpisode,
+                            //             'id_list_anime' => $idListAnime,
+                            //             'code' => md5($code),
+                            //             'cron_at' => Carbon::now()->format('Y-m-d H:i:s')
+                            //         );
+                            //         $save = MainModel::updateLastUpdateMysql($Update,$conditions);
+                            //     }
+                            //     $codeLastUpdate['code'] = md5($code);
+                            //     $lastUpdate = MainModel::getDataLastUpdate($codeLastUpdate);
+                            //     $idLastUpdate = (empty($lastUpdate)) ? 0 : $lastUpdate[0]['id'];
                                 
-                            }
+                            // }
                         }#End Last Update
 
                         {#save to StreamAnime
@@ -416,8 +359,7 @@ class StreamAnimeController extends Controller
                                     'slug' => $SlugEpisode,
                                     'title' => $Title,
                                     'id_list_anime' => $idListAnime,
-                                    'id_last_update' => $idLastUpdate,
-                                    'id_list_episode' => $idListEpAnime,
+                                    'id_list_episode' => $idListEpisode,
                                     'id_detail_anime' => $idDetailAnime,
                                     'next_episode' => $NextEpisode,
                                     'key_list_anime' => $KeyListAnim,
@@ -435,8 +377,7 @@ class StreamAnimeController extends Controller
                                     'slug' => $SlugEpisode,
                                     'title' => $Title,
                                     'id_list_anime' => $idListAnime,
-                                    'id_last_update' => $idLastUpdate,
-                                    'id_list_episode' => $idListEpAnime,
+                                    'id_list_episode' => $idListEpisode,
                                     'id_detail_anime' => $idDetailAnime,
                                     'next_episode' => $NextEpisode,
                                     'key_list_anime' => $KeyListAnim,
@@ -676,9 +617,9 @@ class StreamAnimeController extends Controller
             return $KeyEncript;
         }
 
-        public function EncriptKeyListAnim($ListEncript){
+        public function EncriptKeyListAnim($Title,$ListEncript){
             $KeyListAnimEnc= array(
-                "Title"=>"",
+                "Title"=>$Title,
                 "Image"=>"",
                 "href"=>$ListEncript
             );

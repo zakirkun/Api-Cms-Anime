@@ -19,9 +19,14 @@ use App\Models\V1\MainModel as MainModel;
 
 class GenreListAnimeController extends Controller
 {
-    public function GenreListAnime(Request $request){
+    public function GenreListAnime(Request $request = NULL, $params = NULL){
         $awal = microtime(true);
-        $ApiKey=$request->header("X-API-KEY");
+        if(!empty($request) || $request != NULL){
+            $ApiKey = $request->header("X-API-KEY");
+        }
+        if(!empty($params) || $params != NULL){
+            $ApiKey = (isset($params['params']['X-API-KEY']) ? ($params['params']['X-API-KEY']) : '');
+        }
         $Users = MainModel::getUser($ApiKey);
         $Token = $Users[0]['token'];
         if($Token){
@@ -141,6 +146,7 @@ class GenreListAnimeController extends Controller
                 return $GenreList;
             });
             if($GenreListAnimeS){
+                
                 for($i=0;$i<count($GenreListAnimeS[0]['subGenre']);$i++){
                     $NameIndex[]=substr($GenreListAnimeS[0]['subGenre'][$i]['genre'],0,1);
                 }

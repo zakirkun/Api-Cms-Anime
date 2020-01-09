@@ -28,7 +28,7 @@ class TrandingWeekAnimeController extends Controller
             $ApiKey = $request->header("X-API-KEY");
         }
         if(!empty($params) || $params != NULL){
-            $ApiKey = (isset($params['params']['X-API-KEY']) ? strtolower($params['params']['X-API-KEY']) : '');
+            $ApiKey = (isset($params['params']['X-API-KEY']) ? ($params['params']['X-API-KEY']) : '');
         }
         $Users = MainModel::getUser($ApiKey);
         $Token = $Users[0]['token'];
@@ -149,6 +149,7 @@ class TrandingWeekAnimeController extends Controller
                 });
                 
                 if($TopListDetail){
+                    
                     for($i=0;$i<count($TopListDetail[0]);$i++){
                         $href = $BASE_URL."".$TopListDetail[0][$i]['href'];
                         $hrefKeyListAnim = $href;

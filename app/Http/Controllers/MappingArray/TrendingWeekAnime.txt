@@ -1,0 +1,18 @@
+#TopListDetail
+
+Array ( 
+    [0] => Array ( 
+        [0] => Array ( 
+            [href] => /anime/bokutachi-wa-benkyou-ga-dekinai-2 
+            [image] => https://img.topddl.net/images/5f41f20a9bad2a32fce0188468d8084b.th.jpg 
+            [title] => Nonton anime: Bokutachi wa Benkyou ga Dekinai! 2 
+            [status] => Ongoing 
+            ) 
+        [1] => Array ( 
+            [href] => /anime/diamond-no-ace-act-ii 
+            [image] => https://img.topddl.net/images/5b2288a72cd9bbc18b192f33102e4790.th.jpg 
+            [title] => Nonton anime: Diamond no Ace: Act II 
+            [status] => Ongoing 
+            ) 
+    )
+)

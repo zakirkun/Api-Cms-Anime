@@ -17,6 +17,7 @@ use Illuminate\Support\Str;
 
 #Helpers
 use App\Helpers\V1\MappingResponseMysql as MappingMysql;
+use App\Helpers\V1\Converter as Converter;
 
 #Load Controller
 use App\Http\Controllers\Nanime\DetailListAnimeController;
@@ -39,7 +40,7 @@ class LastUpdateEpsAnimController extends Controller
             $PageNumber=$request->header("PageNumber") ? $request->header("PageNumber") : 1;
         }
         if(!empty($params) || $params != NULL){
-            $ApiKey = (isset($params['params']['X-API-KEY']) ? strtolower($params['params']['X-API-KEY']) : '');
+            $ApiKey = (isset($params['params']['X-API-KEY']) ? ($params['params']['X-API-KEY']) : '');
             $PageNumber = (isset($params['params']['PageNumber'])? ($params['params']['PageNumber']) : 1);
         }
         
@@ -205,11 +206,17 @@ class LastUpdateEpsAnimController extends Controller
                     $title = $nodel->filter('.post-title')->attr("title");
                     $status =  $nodel->filter('.status')->text('Default text content');
                     $episode =  $nodel->filter('.episode')->text('Default text content');
+                    if (stripos((Converter::__normalizeSummary($titleAlias)),'[email') !== false) {
+                        $Title = "Email";
+                        $titleAlias = "Email";
+                    }else{
+                        $Title = $title;
+                    }
                     $ListUpdtnime = array(
                             "hrefSingleList" => $href,
                             "image" => $image,
                             "titleAlias" => $titleAlias,
-                            "title" => $title,
+                            "title" => $Title,
                             "status" => $status,
                             "episode" => $episode
                     );
@@ -220,6 +227,7 @@ class LastUpdateEpsAnimController extends Controller
             });
             
             if($LastUpdateEps){
+                
                 $SingleEpisode = array();
                 $hrefKeyListAnim = array();
                 for($i=0;$i<count($LastUpdateEps[0]);$i++){
@@ -246,7 +254,7 @@ class LastUpdateEpsAnimController extends Controller
                             $ListDetail = $node->filter('.animeInfo > ul')->html();
                             $SubDetail01 = explode("<b", $ListDetail);
                             $SubDetail02=array(
-                                "Judul"=>substr($SubDetail01[1], strpos($SubDetail01[1], ":") + 1),
+                                "Judul"=>substr($SubDetail01[2], strpos($SubDetail01[2], ":") + 1),
                                 "JudulAlternatif"=>substr($SubDetail01[2], strpos($SubDetail01[2], ":") + 1),
                                 "Rating"=>substr($SubDetail01[3], strpos($SubDetail01[3], ":") + 1),
                                 "Votes"=>substr($SubDetail01[4], strpos($SubDetail01[4], ":") + 1),
@@ -309,18 +317,24 @@ class LastUpdateEpsAnimController extends Controller
                 if(!is_numeric($TotalSearchPage)){
                     $TotalSearchPage = 1;
                 }
+                
                 if($PageNumber <= $TotalSearchPage){
                     $A =0;
                     for($i=0;$i < count($SingleEpisode);$i++){
                         $href = $BASE_URL."".$SingleEpisode[$i]['SingleEpisode'][0]['hrefEpisode'];
                         $Image = $LastUpdateEps[0][$i]['image'];
                         $Title = $LastUpdateEps[0][$i]['title'];
+                        $TitleAlias = $LastUpdateEps[0][$i]['titleAlias'];
+                        if($Title == "Email"){
+                            $Title = self::filterCodeDetailAnime($LastUpdateEps[0][$i]['hrefSingleList']);
+                            $TitleAlias = self::filterCodeDetailAnime($LastUpdateEps[0][$i]['hrefSingleList']);
+                        }
                         $TotalEpisode = $SingleEpisode[$i]['SingleEpisode'][0]['subDetail']['TotalEpisode'];
                         $Rating = $SingleEpisode[$i]['SingleEpisode'][0]['subDetail']['Rating'];
                         $Synopsis = $SingleEpisode[$i]['SingleEpisode'][0]['synopsis'];
                         $GenreList = $SingleEpisode[$i]['SingleEpisode'][0]['genre'];
                         $Years = '';
-                        $TitleAlias = $LastUpdateEps[0][$i]['titleAlias'];
+                        
                         $Status = $LastUpdateEps[0][$i]['status'];
                         $Episode = $LastUpdateEps[0][$i]['episode'];
                         $KeyEpisodeEnc=array(
@@ -352,6 +366,7 @@ class LastUpdateEpsAnimController extends Controller
                                         "href"=>$hrefKeyListAnim[$i]
                                     );
                                     $KeyListAnim = self::encodeKeyListAnime($KeyListAnimEnc);
+                                    
                                     if(empty($listAnime)){
                                         $Input = array(
                                             'code' => md5($cdListAnime),
@@ -374,10 +389,10 @@ class LastUpdateEpsAnimController extends Controller
                                             'cron_at' => Carbon::now()->format('Y-m-d H:i:s')
                                         );
                                         $save = MainModel::updateListAnimeMysql($Update,$conditions);
-                                        $codeListAnime['code'] = md5($cdListAnime);
-                                        $listAnime = MainModel::getDataListAnime($codeListAnime);
-                                        $idListAnime = (empty($listAnime)) ? 0 : $listAnime[0]['id'];
                                     }
+                                    $codeListAnime['code'] = md5($cdListAnime);
+                                    $listAnime = MainModel::getDataListAnime($codeListAnime);
+                                    $idListAnime = (empty($listAnime)) ? 0 : $listAnime[0]['id'];
                                 }
                             }#End Save to Liat anime
 
@@ -408,6 +423,8 @@ class LastUpdateEpsAnimController extends Controller
                                         ]
                                     ];
                                     $dataDetailAnime = $this->DetailListAnimeController->DetailListAnim(NULL,$listDataAnime);
+                                    $codeDetailAnime['code'] = md5($cdListAnime);
+                                    
                                 }
                                 $hrefEpisode = ($SingleEpisode[$i]['SingleEpisode'][0]['hrefEpisode']);
                                 $slugListEps = self::filterCodeEpisodeAnime($hrefEpisode);
@@ -518,5 +535,13 @@ class LastUpdateEpsAnimController extends Controller
         $menit = (int)($durasi/60) - $jam*60;
         $detik = $durasi - $jam*60*60 - $menit*60;
         return $kecepatan = number_format((float)$detik, 2, '.', '');
+    }
+    public static function filterCodeDetailAnime($href){
+        $hrefDetailAnime = $href;
+        $SlugAnime = substr($hrefDetailAnime, strrpos($hrefDetailAnime, '/' )+1);
+        $SlugAnime = str_replace("-00","-",$SlugAnime);
+        $SlugAnime = str_replace("-0","-",$SlugAnime);
+        $SlugAnime = str_replace("-"," ",$SlugAnime);
+        return $SlugAnime;
     }
 }

@@ -15,8 +15,13 @@ class Kernel extends ConsoleKernel
      */
     protected $commands = [
         '\App\Console\Commands\Mysql\CronDetailListAnimeGenerateByAlfabet',
-        '\App\Console\Commands\Mysql\CronTrendingweekGenerate',
+        '\App\Console\Commands\Mysql\CronDetailListAnimeGenerateByDate',
         '\App\Console\Commands\Mysql\CronLastUpdateGenerate',
+        '\App\Console\Commands\Mysql\CronStreamAnimeGenerateByDate',
+        '\App\Console\Commands\Mysql\CronTrendingweekGenerate',
+        '\App\Console\Commands\Mysql\CronGenreAnimeGenerate',
+        '\App\Console\Commands\Mysql\CronScheduleAnimeGenerate',
+        
     ];
 
     /**
@@ -30,10 +35,28 @@ class Kernel extends ConsoleKernel
         $config = Config::get('cron/cron_config');
 
         #Cron Nanime
-        if($config['Cron_DetailListAnimeGenerate']) {
+        if($config['Cron_DetailListAnimeGenerateByAlfabet']) {
             $schedule->command('CronDetailListAnimeGenerateByAlfabet:DetailListAnimeGenerateByAlfabetV1')
                 ->everyMinute() #setiap menit
                 ->appendOutputTo('/tmp/Cron_DetailListAnimeGenerateByAlfabet.log');
+        }
+
+        if($config['Cron_DetailListAnimeGenerateByDate']) {
+            $schedule->command('CronDetailListAnimeGenerateByDate:DetailListAnimeGenerateByDateV1')
+                ->everyMinute() #setiap menit
+                ->appendOutputTo('/tmp/Cron_DetailListAnimeGenerateByDate.log');
+        }
+
+        if($config['Cron_LastUpdate_Generate']) {
+            $schedule->command('CronLastUpdateGenerate:CronLastUpdateGenerateV1 ')
+                ->everyMinute() #setiap menit
+                ->appendOutputTo('/tmp/Cron_LastUpdate_Generate.log');
+        }
+
+        if($config['Cron_ListEpisodeAnime_GenerateByDate']) {
+            $schedule->command('CronStreamAnimeGenerateByDate:CronStreamAnimeGenerateByDateV1 ')
+                ->everyMinute() #setiap menit
+                ->appendOutputTo('/tmp/Cron_ListEpisodeAnime_GenerateByDate.log');
         }
 
         if($config['Cron_Trendingweek_Generate']) {
@@ -42,10 +65,16 @@ class Kernel extends ConsoleKernel
                 ->appendOutputTo('/tmp/Cron_Trendingweek_Generate.log');
         }
 
-        if($config['Cron_LastUpdate_Generate']) {
-            $schedule->command('CronLastUpdateGenerate:CronLastUpdateGenerateV1 ')
+        if($config['Cron_GenreAnime_Generate']) {
+            $schedule->command('CronGenreAnimeGenerate:CronGenreAnimeGenerateV1')
                 ->everyMinute() #setiap menit
-                ->appendOutputTo('/tmp/Cron_LastUpdate_Generate.log');
+                ->appendOutputTo('/tmp/Cron_GenreAnime_Generate.log');
+        }
+
+        if($config['Cron_ScheduleAnime_Generate']) {
+            $schedule->command('CronScheduleAnimeGenerate:CronScheduleAnimeGenerateV1')
+                ->everyMinute() #setiap menit
+                ->appendOutputTo('/tmp/Cron_ScheduleAnime_Generate.log');
         }
 
     }

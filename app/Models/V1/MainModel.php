@@ -147,8 +147,9 @@ class MainModel extends Model
                 $query = $query->orWhere('name_index', 'Like', "%".$alphas[$i]);  
             }
         } 
-        if(!empty($startDate)) $query = $query->where('cron_at', '<', $startDate);
-        if(!empty($endDate)) $query = $query->where('cron_at', '>', $endDate);
+        if(!empty($startDate) && empty($endDate)) $query = $query->where('cron_at', '>=', $startDate);
+        if($startDate && $endDate) $query = $query->whereBetween('cron_at', [$startDate, $endDate]);
+        
         $query = $query->get();
 
         $result = [];
@@ -549,12 +550,18 @@ class MainModel extends Model
     #================  getDataListEpisodeAnime ==================================
     public static function getDataListEpisodeAnime($params = []){
         $code = (isset($params['code']) ? $params['code'] : '');
+        $startDate = (isset($params['start_date']) ? $params['start_date'] : '');
+        $endDate = (isset($params['end_date']) ? $params['end_date'] : '');
+        
         $tabel_name = 'list_episode';
         ini_set('memory_limit','1024M');
         $query = DB::connection('application_db')
             ->table($tabel_name);
         
         if(!empty($code)) $query = $query->where('code', '=', $code);
+
+        if(!empty($startDate) && empty($endDate)) $query = $query->where('cron_at', '>=', $startDate);
+        if($startDate && $endDate) $query = $query->whereBetween('cron_at', [$startDate, $endDate]);
         $query = $query->get();
 
         $result = [];

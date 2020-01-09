@@ -1,0 +1,22 @@
+# nodeValues
+Array ( 
+    [0] => Array ( 
+        [0] => Array ( 
+            [List] => Array ( 
+                [0] => Array ( 
+                    [TitleAlias] => .hack//G.U. Returner 
+                    [Title] => .hack//G.U. Returner 
+                    [href] => /anime/hackgu-returner 
+                    [type] => 
+                    ) 
+                [1] => Array ( 
+                    [TitleAlias] => 
+                    .hack//Intermezzo [Title] => .hack//Intermezzo 
+                    [href] => /anime/hackintermezzo 
+                    [type] => 
+                    )
+            )
+        )
+    )
+) 
+                

@@ -7,7 +7,7 @@ use \Illuminate\Http\Request;
 use \Illuminate\Http\Response;
 
 #Load Controller
-use App\Http\Controllers\Nanime\DetailListAnimeController;
+use App\Http\Controllers\Nanime\StreamAnimeController;
 
 /*Load Component*/
 use Cache;
@@ -18,21 +18,21 @@ use Carbon\Carbon;
 use App\Models\V1\MainModel as MainModel;
 
 
-class CronDetailListAnimeGenerateByDate extends Command
+class CronStreamAnimeGenerateByDate extends Command
 {
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'CronDetailListAnimeGenerateByDate:DetailListAnimeGenerateByDateV1  {start_date} {end_date} {show_log} ';
+    protected $signature = 'CronStreamAnimeGenerateByDate:CronStreamAnimeGenerateByDateV1 {start_date} {end_date} {show_log}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Cron untuk generate data DetailListAnimeController';
+    protected $description = 'Cron untuk generate data CronStreamAnimeGenerateByDateV1';
 
     /**
      * Create a new command instance.
@@ -42,7 +42,7 @@ class CronDetailListAnimeGenerateByDate extends Command
     public function __construct()
     {
         parent::__construct();
-        $this->DetailListAnimeController = new DetailListAnimeController();
+        $this->StreamAnimeController = new StreamAnimeController();
     }
 
     /**
@@ -56,7 +56,7 @@ class CronDetailListAnimeGenerateByDate extends Command
         $showLog = filter_var($this->argument('show_log'), FILTER_VALIDATE_BOOLEAN);
 
         $path_log = base_path('storage/logs/generate/mysql');
-        $filename = $path_log.'/DetailListAnimeGenerateByAlfabetV1.json';
+        $filename = $path_log.'/CronTrendingweekV1.json';
         #get file log last date generate
         if(file_exists($filename)) $content = file_get_contents($filename);
         
@@ -66,35 +66,34 @@ class CronDetailListAnimeGenerateByDate extends Command
             'start_date' => $startDate,
             'end_date' => $EndDate
         ];
-        $listAnime = MainModel::getDataListAnime($param);
+        $listEpsAnime = MainModel::getDataListEpisodeAnime($param);
         $status = "Complete";
         $i = 0;
         $dataNotSave = array();
-        $TotalHit = (count($listAnime));
-        foreach($listAnime as $listAnime){
-            $listDataAnime = [
+        $TotalHit = (count($listEpsAnime));
+        foreach($listEpsAnime as $listEpsAnime){
+            $StreamAnime = [
                 'params' => [
                     'X-API-KEY' => env('X_API_KEY',''),
-                    'KeyListAnim' => $listAnime['key_list_anime']
+                    'KeyEpisode' => $listEpsAnime['key_episode']
                 ]
             ];
             try{
-                $data = $this->DetailListAnimeController->DetailListAnim(NULL,$listDataAnime);
-                echo json_encode($data)."\n\n";
+                $data = $this->StreamAnimeController->StreamAnime(NULL,$StreamAnime);
+                // echo json_encode($data)."\n\n";
+                dd($data);
                 $i++;
             }catch(\Exception $e){
                 $dataNotSave[] = array(
-                    'Title' => $listAnime['title'],
-                    'Index' => $listAnime['name_index'],
-                    'id' => $listAnime['id']
+                    'Episode' => $listEpsAnime['episode'],
+                    'KeyEpisode' => $listEpsAnime['KeyEpisode'],
+                    'id' => $listEpsAnime['id']
                 );
                 $status = 'Not Complete';
-                
             }
-            
         }
         $notSave = $TotalHit - $i;
-
+        
         $response['Total_hit'] = $TotalHit;
         $response['Hit_date'] =  Carbon::now()->format(DATE_ATOM);
         $response['Total_Data_Save'] = $i.' - Keyword index'.' - '.$startByIndex.':'.$EndByIndex;

@@ -1,0 +1,71 @@
+#LastUpdateEps
+
+Array ( 
+    [0] => Array ( 
+        [0] => Array ( 
+            [hrefSingleList] => /anime/slam-dunk 
+            [image] => https://image.tmdb.org/t/p/w154/dPhQACs9QR5mwUikRKltCZATdxJ.jpg 
+            [titleAlias] => Slam Dunk (1993) 
+            [title] => Slam Dunk 
+            [status] => Tamat 
+            [episode] => Episode 101 
+            ) 
+        [1] => Array ( 
+            [hrefSingleList] => /anime/one-piece-heart-of-gold 
+            [image] => https://img.topddl.net/images/c50e36a5007c03fa711f7e82752bd3bf.th.jpg 
+            [titleAlias] => One Piece: Heart of Gold (2016) 
+            [title] => One Piece: Heart of Gold 
+            [status] => Tamat 
+            [episode] => Episode 1 
+            ) 
+    )
+)
+
+#SingleEpisode
+Array ( 
+    [0] => Array ( 
+        [SingleEpisode] => Array ( 
+            [0] => Array ( 
+                [subDetail] => Array ( 
+                    [Judul] => Slam Dunk
+                    [JudulAlternatif] => Slam Dunk
+                    [Rating] => 8.55
+                    [Votes] => 51918
+                    [Status] => Ended
+                    [TotalEpisode] => 101
+                    [HariTayang] => Waktu Standar Jepang
+                    ) 
+                [synopsis] => Hanamichi Sakuragi, terkenal karena kesabaran, 
+                    tinggi badan masif, dan rambut merah api ini, mendaftar 
+                    di Shohoku High, dengan harapan akhirnya bisa mendapatkan 
+                    pacar dan memecahkan rekornya ditolak 50 kali 
+                    berturut-turut di sekolah menengah. Ketenarannya 
+                    mendahuluinya, bagaimanapun, menyebabkan dia dihindari 
+                    oleh kebanyakan siswa. Segera setelah kejadian tertentu, 
+                    Hanamichi dibiarkan dengan dua pikiran yang tak tergoyahkan: 
+                    "Saya benci bola basket," dan "Saya sangat membutuhkan pacar." 
+                    Suatu hari, seorang gadis bernama Haruko Akagi mendekatinya tanpa 
+                    sepengetahuan tentang masalah dan bertanya kepadanya apakah dia 
+                    suka basket Hanamichi segera jatuh cinta pada dia, mengucapkan 
+                    sebuah penegasan yang sungguh-sungguh. Dia kemudian 
+                    membawanya ke gimnasium, di mana dia bertanya kepadanya apakah 
+                    dia bisa melakukan slam dunk. Dalam upaya untuk mengesankan 
+                    Haruko, dia membuat lompatan, tapi terlalu cepat, malah 
+                    membanting kepalanya langsung ke papan tulis. Ketika Haruko 
+                    menginformasikan kapten tim basket tentang kemampuan fisik 
+                    Hanamichi yang nyaris tidak manusiawi, dia perlahan mendapati 
+                    dirinya tertarik ke dalam persahabatan dan kompetisi olahraga 
+                    yang sebelumnya dia dambakan. 
+                [genre] => Array ( 
+                    [0] => Comedy 
+                    [1] => Drama 
+                    [2] => School 
+                    [3] => Shounen 
+                    [4] => Sports 
+                    ) 
+                [hrefEpisode] => /episode/slam-dunk-episode-101 
+            )
+        )
+    )
+)
+            

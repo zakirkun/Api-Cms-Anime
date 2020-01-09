@@ -18,20 +18,25 @@ use App\Models\V1\MainModel as MainModel;
 
 class ScheduleAnimeController extends Controller
 {
-    public function ScheduleAnime(Request $request){
+    public function ScheduleAnime(Request $request = NULL, $params = NULL){
         $awal = microtime(true);
-        $ApiKey=$request->header("X-API-KEY");
+        if(!empty($request) || $request != NULL){
+            $ApiKey = $request->header("X-API-KEY");
+        }
+        if(!empty($params) || $params != NULL){
+            $ApiKey = (isset($params['params']['X-API-KEY']) ? ($params['params']['X-API-KEY']) : '');
+        }
         $Users = MainModel::getUser($ApiKey);
         $Token = $Users[0]['token'];
         if($Token){
-            try{
+            // try{
                 $ConfigController = new ConfigController();
                 $BASE_URL=$ConfigController->BASE_URL_ANIME_1;
                 $BASE_URL_LIST=$BASE_URL."/page/jadwal-rilis/";
                 return $this->ScheduleAnimeValue($BASE_URL_LIST,$BASE_URL,$awal);
-            }catch(\Exception $e){
-                return $this->InternalServerError();
-            }
+            // }catch(\Exception $e){
+            //     return $this->InternalServerError();
+            // }
             
         }else{
             return $this->InvalidToken();
@@ -157,7 +162,7 @@ class ScheduleAnimeController extends Controller
                     ];
                     return $items;
             });
-            
+
             if($nodeValues){
                 $ScheduleAnime=array();
                 for($i=0;$i<7;$i++){
@@ -180,6 +185,7 @@ class ScheduleAnimeController extends Controller
                         {#Query Save to Mysql
                             $Slug = Str::slug($Title);
                             $code = $Slug;
+                            $cdListAnime = $Slug;
 
                             {#Save to List Anime
                                 $codeListAnime['code'] = md5($code);
@@ -193,7 +199,7 @@ class ScheduleAnimeController extends Controller
                                         "Type"=>"",
                                         "href"=>$href
                                     );
-                                    $KeyListAnim = self::encodeKeyLiatAnime($KeyListAnimEnc);
+                                    $KeyListAnim = self::encodeKeyListAnime($KeyListAnimEnc);
                                     if(empty($listAnime)){
                                         $Input = array(
                                             'code' => md5($cdListAnime),
@@ -270,7 +276,7 @@ class ScheduleAnimeController extends Controller
         }
     }
 
-    public static function encodeKeyLiatAnime($KeyListAnimEnc){
+    public static function encodeKeyListAnime($KeyListAnimEnc){
         $result = base64_encode(json_encode($KeyListAnimEnc));
         $result = str_replace("=", "QRCAbuK", $result);
         $iduniq0 = substr($result, 0, 10);

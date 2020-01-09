@@ -1,0 +1,40 @@
+// SublistDetail
+
+Array ( [0] => Array ( [subDetail] => Array ( [Title] => .hack//G.U. Returner
+[JudulAlternatif] => .HACK//G.U. RETURNER
+[Rating] => 6.83
+[Votes] => 7649
+[Status] => Ended
+[TotalEpisode] => 1
+[HariTayang] => Waktu Standar Jepang
+) [synopsis] => Karakter dari Series hack//G.U Game dan .hack//Roots menerima email dari Ovan. Dia meminta mereka untuk pergi ke “Festival Terlarang yang Tersembunyi” yang sudah diatur sebagai Festival Musim Panas Misterius. Disana mereka menemukan AIDA Chim Chim yang ingin hidup berdampingan secara damai dengan pemain lainnya. 
+[image] => https://img.topddl.net/images/1734753bb9e50092e29619e76c52cf71.th.jpg 
+[genre] => Array ( 
+    [0] => Fantasy 
+    [1] => Drama 
+    [2] => Adventure 
+    [3] => Game 
+    [4] => Magic 
+    [5] => Sci-Fi ) 
+[DataEps] => Array ( 
+    [0] => Array ( 
+        [0] => Array ( 
+            [href] => /episode/hackgu-returner-episode-001 
+            [nameEps] => .hack//G.U. Returner Episode 1 Sub Indo 
+            ) 
+        ) 
+        [1] => Array ( 
+            [0] => Array ( 
+                [href] => # 
+                [nameEps] => Belum ada batch 
+                ) 
+            ) 
+        [2] => Array ( 
+            [0] => Array ( 
+                [href] => # 
+                [nameEps] => Belum ada movie 
+                ) 
+            ) 
+        ) 
+    ) 
+)

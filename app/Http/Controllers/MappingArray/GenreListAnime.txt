@@ -1,0 +1,24 @@
+#GenreListAnimeS
+
+Array ( 
+    [0] => Array ( 
+        [subGenre] => Array ( 
+            [0] => Array ( 
+                [genre] => 3 
+                [href] => /archive/genre/3 
+                ) 
+            [1] => Array ( 
+                [genre] => 31 
+                [href] => /archive/genre/31 
+                ) 
+            [2] => Array ( 
+                [genre] => Action 
+                [href] => /archive/genre/action 
+                ) 
+            [3] => Array ( 
+                [genre] => add a tag 
+                [href] => /archive/genre/add-a-tag 
+                ) 
+        )
+    )
+)

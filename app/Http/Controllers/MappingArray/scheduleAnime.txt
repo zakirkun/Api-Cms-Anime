@@ -1,0 +1,23 @@
+#nodeValues
+
+Array ( 
+    [0] => Array ( 
+        [List] => Array ( 
+            [0] => Array ( 
+                [0] => Array ( 
+                    [TitleAlias] => Fate/Grand Order: Zettai Majuu Sensen Babylonia (2019) 
+                    [href] => /anime/fategrand-order-zettai-majuu-sensen-babylonia 
+                    [title] => Fate/Grand Order: Zettai Majuu Sensen Babylonia 
+                    [image] => https://image.tmdb.org/t/p/w154/gSX8OJ6bdH7jY6S3ykPW4VbZhw2.jpg 
+                    ) 
+                [1] => Array ( 
+                    [TitleAlias] => SD Gundam World: Sangoku Souketsuden (2019) 
+                    [href] => /anime/sd-gundam-world-sangoku-souketsuden 
+                    [title] => SD Gundam World: Sangoku Souketsuden 
+                    [image] => https://image.tmdb.org/t/p/w154/45tANzlxrGivKoIt5Fg9WD62oXQ.jpg 
+                    ) 
+                )
+            )           
+        [NameDay] => Minggu (Klik untuk lihat jadwal) 
+        ) 
+)

@@ -13,6 +13,9 @@ use \Carbon\Carbon;
 use \Sunra\PhpSimple\HtmlDomParser;
 use Illuminate\Support\Str;
 
+#Load Helper V1
+use App\Helpers\V1\Converter as Converter;
+
 #Load Models V1
 use App\Models\V1\MainModel as MainModel;
 
@@ -27,7 +30,7 @@ class DetailListAnimeController extends Controller
             $KeyListAnim = $request->header("KeyListAnim");
         }
         if(!empty($params) || $params != NULL){
-            $ApiKey = (isset($params['params']['X-API-KEY']) ? strtolower($params['params']['X-API-KEY']) : '');
+            $ApiKey = (isset($params['params']['X-API-KEY']) ? ($params['params']['X-API-KEY']) : '');
             $KeyListAnim = (isset($params['params']['KeyListAnim']) ? ($params['params']['KeyListAnim']) : '');
         }
         $Users = MainModel::getUser($ApiKey);
@@ -186,12 +189,13 @@ class DetailListAnimeController extends Controller
                     } 
                     $ListDetail = $node->filter('.animeInfo > ul')->html();
                     $SubDetail01 = explode("<b", $ListDetail);
-                    $deleteEmail = ['[','email','protected',']',','];
-                    if (stripos((self::__normalizeSummary(substr($SubDetail01[1], strpos($SubDetail01[1], ":") + 1))),'[email') !== false) {
-                        $Title = str_replace($deleteEmail,"",self::__normalizeSummary(substr($SubDetail01[2], strpos($SubDetail01[2], ":") + 1)));    
+                    $deleteEmail = ['[','email','protected',']',',','@'];
+                    if (stripos((Converter::__normalizeSummary(substr($SubDetail01[1], strpos($SubDetail01[1], ":") + 1))),'[email') !== false) {
+                        $Title = "Email";    
                     }else{
                         $Title = substr($SubDetail01[1], strpos($SubDetail01[1], ":") + 1);
                     }
+                    
                     $SubDetail02=array(
                         "Title"=>$Title,
                         "JudulAlternatif"=>substr($SubDetail01[2], strpos($SubDetail01[2], ":") + 1),
@@ -206,7 +210,7 @@ class DetailListAnimeController extends Controller
                         $SubDataEps =  $node->filter('a')->each(function ($node,$i) {
                             $hrefEps = $node->filter('a')->attr('href');
                             $NameEps = $node->filter('a')->text('Default text content');
-                            if (stripos((self::__normalizeSummary($NameEps)),'[email') !== false) {
+                            if (stripos((Converter::__normalizeSummary($NameEps)),'[email') !== false) {
                                 $NameEps = substr($hrefEps, strrpos($hrefEps, '/' )+1);
                                 $NameEps = str_replace("-00","-",$NameEps);
                                 $NameEps = str_replace("-0","-",$NameEps);
@@ -241,12 +245,13 @@ class DetailListAnimeController extends Controller
                     } 
                     $ListDetail = $node->filter('.animeInfo > ul')->html();
                     $SubDetail01 = explode("<b", $ListDetail);
-                    $deleteEmail = ['[','email','protected',']',','];
-                    if (stripos((self::__normalizeSummary(substr($SubDetail01[1], strpos($SubDetail01[1], ":") + 1))),'[email') !== false) {
-                        $Title = str_replace($deleteEmail,"",self::__normalizeSummary(substr($SubDetail01[2], strpos($SubDetail01[2], ":") + 1)));    
+                    $deleteEmail = ['[','email','protected',']',',','@'];
+                    if (stripos((Converter::__normalizeSummary(substr($SubDetail01[1], strpos($SubDetail01[1], ":") + 1))),'[email') !== false) {
+                        $Title = "Email";    
                     }else{
                         $Title = substr($SubDetail01[1], strpos($SubDetail01[1], ":") + 1);
                     }
+                    
                     $SubDetail02=array(
                         "Title"=>$Title,
                         "JudulAlternatif"=>substr($SubDetail01[2], strpos($SubDetail01[2], ":") + 1),
@@ -261,7 +266,7 @@ class DetailListAnimeController extends Controller
                     $href = $node->filter('.col-md-3 > a')->attr("href");
                     $imageUrl = $node->filter('.col-md-3 > a > img')->attr("src");
                     $NameEps = substr($SubDetail01[1], strpos($SubDetail01[1], ":") + 1);
-                    if (stripos((self::__normalizeSummary($NameEps)),'[email') !== false) {
+                    if (stripos((Converter::__normalizeSummary($NameEps)),'[email') !== false) {
                         $NameEps = substr($hrefEps, strrpos($hrefEps, '/' )+1);
                         $NameEps = str_replace("-00","-",$NameEps);
                         $NameEps = str_replace("-0","-",$NameEps);
@@ -286,10 +291,13 @@ class DetailListAnimeController extends Controller
             // Get the latest post in this category and display the titles
             
             if($SubListDetail){
-                
                 $genree="";
                 $Title = trim(strtok($SubListDetail[0]['subDetail']['Title'],'<'));
                 $Title = str_replace('&amp;','',$Title);
+                if($Title == "Email"){
+                    $Title = self::filterCodeDetailAnime($BASE_URL_LIST);
+                }
+                
                 $Synopsis = trim($SubListDetail[0]['synopsis']);
                 $SubGenre =  $SubListDetail[0]['genre'];
                 for($i=0;$i<count($SubGenre);$i++){
@@ -311,6 +319,7 @@ class DetailListAnimeController extends Controller
                     $Slug = Str::slug($Title);
                     $code = $Slug;
                     $cdListAnime = $Slug;
+                    
 
                     {#save To list Anime
                         $codeListAnime['code'] = md5($code);
@@ -379,6 +388,7 @@ class DetailListAnimeController extends Controller
                                 
                                 'cron_at' => Carbon::now()->format('Y-m-d H:i:s')
                             );
+                            
                             $save = MainModel::insertDetailMysql($Input);
                             $LogSave = $this->saveListEpisode($SubListDetail,$idListAnime,$Title,$BASE_URL);
         
@@ -504,34 +514,12 @@ class DetailListAnimeController extends Controller
         return $kecepatan = number_format((float)$detik, 2, '.', '');
     }
 
-    static function __normalizeUrl($input) {
-		$pattern = '@(http(s)?://)?(([a-zA-Z])([-\w]+\.)+([^\s\.]+[^\s]*)+[^,.\s])@';
-		return $output = preg_replace($pattern, '<a href="http$2://$3">Klik Disini</a>', $input);
-	}
-
-	static function __clearUtf($text){
-		return $string = iconv('UTF-8', 'UTF-8//IGNORE', $text); // or
+    public static function filterCodeDetailAnime($href){
+        $hrefDetailAnime = $href;
+        $SlugAnime = substr($hrefDetailAnime, strrpos($hrefDetailAnime, '/' )+1);
+        $SlugAnime = str_replace("-00","-",$SlugAnime);
+        $SlugAnime = str_replace("-0","-",$SlugAnime);
+        $SlugAnime = str_replace("-"," ",$SlugAnime);
+        return $SlugAnime;
     }
-    
-    static function __normalizeSummary($text){
-        // Strip HTML Tags
-        $clear = strip_tags($text);
-
-        $clear = str_replace(["“","”","–"], ["","","-"], $clear);
-        // Clean all special characters
-        $clear = htmlentities($clear);
-        // Clean up things like &amp;
-        $clear = html_entity_decode($clear);
-        // Strip out any url-encoded stuff
-        $clear = urldecode($clear);
-        // Replace Multiple spaces with single space
-        $clear = preg_replace('/ +/', ' ', $clear);
-        // Trim the string of leading/trailing space
-        $clear = trim($clear);
-        $clear = self::__normalizeUrl($clear);
-        $clear = self::__clearUtf($clear);
-
-        return $clear;
-    }
-
 }

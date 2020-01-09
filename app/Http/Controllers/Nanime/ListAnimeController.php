@@ -14,6 +14,10 @@ use \Carbon\Carbon;
 use \Sunra\PhpSimple\HtmlDomParser;
 use \App\User;
 use Illuminate\Support\Str;
+
+#Load Helper V1
+use App\Helpers\V1\Converter as Converter;
+
 #Load Models V1
 use App\Models\V1\MainModel as MainModel;
 
@@ -130,10 +134,18 @@ class ListAnimeController extends Controller
                     $NameIndex =$nodel->filter('.col-md-12')->text('Default text content');
                     
                     $SubList= $nodel->filter('.col-md-6')->each(function ($nodel,$i) {
-                        $title = $nodel->filter('a')->text('Default text content');
+                        $Title = $nodel->filter('a')->text('Default text content');
                         $href =$nodel->filter('a')->attr('href');
+                        $deleteEmail = ['[','email','protected',']',','];
+                        if (stripos((Converter::__normalizeSummary($Title)),'[email') !== false) {
+                            $Title = substr($href, strrpos($href, '/' )+1);
+                            $Title = str_replace("-"," ",$Title);
+                        }else{
+                            $Title = $Title;
+                        }
                         $item = [
-                            'Title'=>$title,
+                            'TitleAlias' => $Title,
+                            'Title'=>$Title,
                             'href'=>$href,
                             'type'=>""
                         ];
@@ -160,6 +172,7 @@ class ListAnimeController extends Controller
                     foreach($List as $List){
                         $filter = substr(preg_replace('/(\v|\s)+/', ' ', $List['Title']), 0, 2);
                         $Title=$List['Title'];
+                        $TitleAlias=$List['TitleAlias'];
                         $Type=$List['type'];
                         if($NameIndexVal=='##'){
                             if(!ctype_alpha($filter) || ctype_alpha($filter)){
