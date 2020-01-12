@@ -12,9 +12,13 @@ use \GuzzleHttp\Psr7;
 use \Carbon\Carbon;
 use \Sunra\PhpSimple\HtmlDomParser;
 use Illuminate\Support\Str;
+
+#Load Helper V1
+use App\Helpers\V1\ResponseConnected as ResponseConnected;
+use App\Helpers\V1\EnkripsiData as EnkripsiData;
+
 #Load Models V1
 use App\Models\V1\MainModel as MainModel;
-
 
 class ScheduleAnimeController extends Controller
 {
@@ -35,95 +39,13 @@ class ScheduleAnimeController extends Controller
                 $BASE_URL_LIST=$BASE_URL."/page/jadwal-rilis/";
                 return $this->ScheduleAnimeValue($BASE_URL_LIST,$BASE_URL,$awal);
             // }catch(\Exception $e){
-            //     return $this->InternalServerError();
+            //      return ResponseConnected::InternalServerError("Schedule Anime","Internal Server Error",$awal);
             // }
             
         }else{
-            return $this->InvalidToken();
+            return ResponseConnected::InvalidToken("Schedule Anime","Invalid Token", $awal);
         }
         
-    }
-    public function InternalServerError(){
-        $API_TheMovie=array(
-            "API_TheMovieRs"=>array(
-                "Version"=> "N.1",
-                "Timestamp"=> Carbon::now()->format(DATE_ATOM),
-                "NameEnd"=>"Release Schedule Anime",
-                "Status"=> "Not Complete",
-                "Message"=>array(
-                    "Type"=> "Info",
-                    "ShortText"=> "Internal Server Error",
-                    "Code" => 500
-                ),
-                "Body"=> array()
-            )
-        );
-        return $API_TheMovie;
-    }
-    
-    public function Success($save,$LogSave,$awal){
-        $API_TheMovie=array(
-            "API_TheMovieRs"=>array(
-                "Version"=> "N.1",
-                "Timestamp"=> Carbon::now()->format(DATE_ATOM),
-                "NameEnd"=>"Release Schedule Anime",
-                "Status"=> "Complete",
-                "Message"=>array(
-                    "Type"=> "Info",
-                    "ShortText"=> "Success.",
-                    "Speed" => self::SpeedResponse($awal),
-                    "Code" => 200
-                ),
-                "LogBody"=> array(
-                    "DataLog"=>$LogSave
-                )
-            )
-        );
-        return $API_TheMovie;
-    }
-    public function PageNotFound(){
-        $API_TheMovie=array(
-            "API_TheMovieRs"=>array(
-                "Version"=> "N.1",
-                "Timestamp"=> Carbon::now()->format(DATE_ATOM),
-                "NameEnd"=>"Release Schedule Anime",
-                "Status"=> "Not Complete",
-                "Message"=>array(
-                    "Type"=> "Info",
-                    "ShortText"=> "Page Not Found.",
-                    "Code" => 404
-                ),
-                "Body"=> array()
-            )
-        );
-        return $API_TheMovie;
-    }
-    public function InvalidToken(){
-        $API_TheMovie=array(
-            "API_TheMovieRs"=>array(
-                "Version"=> "N.1",
-                "Timestamp"=> Carbon::now()->format(DATE_ATOM),
-                "NameEnd"=>"Release Schedule Anime",
-                "Status"=> "Not Complete",
-                "Message"=>array(
-                    "Type"=> "Info",
-                    "ShortText"=> "Invalid Token",
-                    "Code" => 203
-                ),
-                "Body"=> array()
-            )
-        );
-        return $API_TheMovie;
-    }
-    public function EncriptKeyListAnim($KeyListAnimEnc){
-        $result = base64_encode(json_encode($KeyListAnimEnc));
-        $result = str_replace("=", "QRCAbuK", $result);
-        $iduniq0 = substr($result, 0, 10);
-        $iduniq1 = substr($result, 10, 500);
-        $result = $iduniq0 . "QWTyu" . $iduniq1;
-        $KeyEncript = $result;
-
-        return $KeyEncript;
     }
     
     public function ScheduleAnimeValue($BASE_URL_LIST,$BASE_URL,$awal){
@@ -175,7 +97,7 @@ class ScheduleAnimeController extends Controller
                             "Image"=>$nodeValues[$i]['List'][0][$j]['image'],
                             "href"=>$href,
                         );
-                        $KeyListAnim = $this->EncriptKeyListAnim($KeyListAnimEnc);
+                        $KeyListAnim = EnkripsiData::encodeKeyListAnime($KeyListAnimEnc);
                         $Image = $nodeValues[$i]['List'][0][$j]['image'];
                         $Title = $nodeValues[$i]['List'][0][$j]['title'];
                         $Title = str_replace("(TV)", "", $Title);
@@ -199,7 +121,7 @@ class ScheduleAnimeController extends Controller
                                         "Type"=>"",
                                         "href"=>$href
                                     );
-                                    $KeyListAnim = self::encodeKeyListAnime($KeyListAnimEnc);
+                                    $KeyListAnim = EnkripsiData::encodeKeyListAnime($KeyListAnimEnc);
                                     if(empty($listAnime)){
                                         $Input = array(
                                             'code' => md5($cdListAnime),
@@ -267,31 +189,13 @@ class ScheduleAnimeController extends Controller
                         }#End Query Save to Mysql
                     }
                 }
-                return $this->Success($save,$LogSave,$awal);
+                return ResponseConnected::Success("Schedule Anime", $save, $LogSave, $awal);
             }else{
-                return $this->PageNotFound();
+                return ResponseConnected::PageNotFound("Schedule Anime","Page Not Found.", $awal);
             }
         }else{
-            return $this->PageNotFound();
+            return ResponseConnected::PageNotFound("Schedule Anime","Page Not Found.", $awal);
         }
     }
 
-    public static function encodeKeyListAnime($KeyListAnimEnc){
-        $result = base64_encode(json_encode($KeyListAnimEnc));
-        $result = str_replace("=", "QRCAbuK", $result);
-        $iduniq0 = substr($result, 0, 10);
-        $iduniq1 = substr($result, 10, 500);
-        $result = $iduniq0 . "QWTyu" . $iduniq1;
-        $KeyListAnim = $result;
-        return $KeyListAnim;
-    }
-
-    public static function SpeedResponse($awal){
-        $akhir = microtime(true);
-        $durasi = $akhir - $awal;
-        $jam = (int)($durasi/60/60);
-        $menit = (int)($durasi/60) - $jam*60;
-        $detik = $durasi - $jam*60*60 - $menit*60;
-        return $kecepatan = number_format((float)$detik, 2, '.', '');
-    }
 }

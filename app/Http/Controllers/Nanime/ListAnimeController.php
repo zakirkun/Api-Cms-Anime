@@ -16,7 +16,9 @@ use \App\User;
 use Illuminate\Support\Str;
 
 #Load Helper V1
+use App\Helpers\V1\ResponseConnected as ResponseConnected;
 use App\Helpers\V1\Converter as Converter;
+use App\Helpers\V1\EnkripsiData as EnkripsiData;
 
 #Load Models V1
 use App\Models\V1\MainModel as MainModel;
@@ -24,10 +26,20 @@ use App\Models\V1\MainModel as MainModel;
 // done
 class ListAnimeController extends Controller
 {
-
-    public function ListAnime(Request $request){
+    /**
+     * @author [Prayugo]
+     * @email [example@mail.com]
+     * @desc [ListAnime & ListAnimeValue Save Mysql]
+     */
+    // ======================= List Anime save to Mysql======================
+    public function ListAnime(Request $request = NULL, $params = NULL){
         $awal = microtime(true);
-        $ApiKey=$request->header("X-API-KEY");
+        if(!empty($request) || $request != NULL){
+            $ApiKey = $request->header("X-API-KEY");
+        }
+        if(!empty($params) || $params != NULL){
+            $ApiKey = (isset($params['params']['X-API-KEY']) ? ($params['params']['X-API-KEY']) : '');
+        }
         $generateKey = bin2hex(random_bytes(16));
         $Users = MainModel::getUser($ApiKey);
         $Token = $Users[0]['token'];
@@ -38,87 +50,13 @@ class ListAnimeController extends Controller
                 $BASE_URL=$ConfigController->BASE_URL_ANIME_1;
                 return $this->ListAnimeValue($BASE_URL_LIST,$BASE_URL,$awal);
             // }catch(\Exception $e){
-            //     return $this->InternalServerError();
+            //     return ResponseConnected::InternalServerError("List Anime","Internal Server Error",$awal);
             // }
             
         }else{
-            return $this->InvalidToken();
+            return ResponseConnected::InvalidToken("List Anime","Invalid Token", $awal);
         }
     }
-    public function InternalServerError(){
-        $API_TheMovie=array(
-            "API_TheMovieRs"=>array(
-                "Version"=> "N.1",
-                "Timestamp"=> Carbon::now()->format(DATE_ATOM),
-                "NameEnd"=>"List Anime",
-                "Status"=> "Not Complete",
-                "Message"=>array(
-                    "Type"=> "Info",
-                    "ShortText"=> "Internal Server Error",
-                    "Code" => 500
-                ),
-                "Body"=> array()
-            )
-        );
-        return $API_TheMovie;
-    }
-
-    public function Success($Save,$LogSave,$awal){
-        $API_TheMovie=array(
-            "API_TheMovieRs"=>array(
-                "Version"=> "N.1",
-                "Timestamp"=> Carbon::now()->format(DATE_ATOM),
-                "NameEnd"=>"List Anime",
-                "Status"=> "Complete",
-                "Message"=>array(
-                    "Type"=> "Info",
-                    "ShortText"=> "Success Save Mysql",
-                    "Speed" => self::SpeedResponse($awal),
-                    "Code" => 200
-                ),
-                "LogBody"=> array(
-                    "DataLog"=>$LogSave
-                )
-            )
-        );
-        return $API_TheMovie;
-    }
-    public function PageNotFound(){
-        $API_TheMovie=array(
-            "API_TheMovieRs"=>array(
-                "Version"=> "N.1",
-                "Timestamp"=> Carbon::now()->format(DATE_ATOM),
-                "NameEnd"=>"List Anime",
-                "Status"=> "Not Complete",
-                "Message"=>array(
-                    "Type"=> "Info",
-                    "ShortText"=> "Page Not Found",
-                    "Code" => 404
-                ),
-                "Body"=> array()
-            )
-        );
-        return $API_TheMovie;
-
-    }
-    public function InvalidToken(){
-        $API_TheMovie=array(
-            "API_TheMovieRs"=>array(
-                "Version"=> "N.1",
-                "Timestamp"=> Carbon::now()->format(DATE_ATOM),
-                "NameEnd"=>"List Anime",
-                "Status"=> "Not Complete",
-                "Message"=>array(
-                    "Type"=> "Info",
-                    "ShortText"=> "Invalid Token",
-                    "Code" => 203
-                ),
-                "Body"=> array()
-            )
-        );
-        return $API_TheMovie;
-    }
-    
     public function ListAnimeValue($BASE_URL_LIST,$BASE_URL,$awal){
         $client = new Client(['cookies' => new FileCookieJar('cookies.txt')]);
         $client->getConfig('handler')->push(CloudflareMiddleware::create());
@@ -183,13 +121,7 @@ class ListAnimeController extends Controller
                                     "href"=>$BASE_URL."".$List['href']
                                 );
                                 
-                                $result = base64_encode(json_encode($KeyListAnimEnc));
-                                $result = str_replace("=", "QRCAbuK", $result);
-                                $iduniq0 = substr($result, 0, 10);
-                                $iduniq1 = substr($result, 10, 500);
-                                $result = $iduniq0 . "QWTyu" . $iduniq1;
-                                $KeyListAnim = $result;
-                                
+                                $KeyListAnim = EnkripsiData::encodeKeyListAnime($KeyListAnimEnc);
                                 
                                 $ListSubIndex[]= array(
                                     "Title"=>trim($Title),
@@ -205,12 +137,8 @@ class ListAnimeController extends Controller
                                     "Type"=>trim($Type),
                                     "href"=>$BASE_URL."".$List['href']
                                 );
-                                $result = base64_encode(json_encode($KeyListAnimEnc));
-                                $result = str_replace("=", "QRCAbuK", $result);
-                                $iduniq0 = substr($result, 0, 10);
-                                $iduniq1 = substr($result, 10, 500);
-                                $result = $iduniq0 . "QWTyu" . $iduniq1;
-                                $KeyListAnim = $result;
+                                
+                                $KeyListAnim = EnkripsiData::encodeKeyListAnime($KeyListAnimEnc);
                                 
                                 $ListSubIndex[]= array(
                                     "Title"=>trim($Title),
@@ -255,21 +183,25 @@ class ListAnimeController extends Controller
                     
                 }
                 
-                return $this->Success($save,$LogSave,$awal);
+                return ResponseConnected::Success("List Anime", $save, $LogSave, $awal);
             }else{
-                return $this->PageNotFound();
+                return ResponseConnected::PageNotFound("List Anime","Page Not Found.", $awal);
             }  
         }else{
-            return $this->PageNotFound();
+            return ResponseConnected::PageNotFound("List Anime","Page Not Found.", $awal);
         }
     }
-    //
-    public static function SpeedResponse($awal){
-        $akhir = microtime(true);
-        $durasi = $akhir - $awal;
-        $jam = (int)($durasi/60/60);
-        $menit = (int)($durasi/60) - $jam*60;
-        $detik = $durasi - $jam*60*60 - $menit*60;
-        return $kecepatan = number_format((float)$detik, 2, '.', '');
+    // ======================= End List Anime save to Mysql======================
+    
+    /**
+     * @author [Prayugo]
+     * @email [example@mail.com]
+     * @desc [ListAnimeGenerate & ListAnimeValue Save Mongo]
+     */
+    // ======================= List Anime Generate save to Mongo ======================
+    public function ListAnimeGenerate(Request $request = NULL, $params = NULL){
+
     }
+
+    // ======================= End List Anime Generate save to Mongo======================
 }

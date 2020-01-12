@@ -25,14 +25,14 @@ class CronScheduleAnimeGenerate extends Command
      *
      * @var string
      */
-    protected $signature = 'CronScheduleAnimeGenerate:CronScheduleAnimeGenerateV1  {show_log} ';
+    protected $signature = 'CronScheduleAnimeGenerate:CronScheduleAnimeGenerateV1';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Cron untuk generate data CronTrendingweekGenerateV1';
+    protected $description = 'Cron untuk generate data CronScheduleAnimeGenerateV1';
 
     /**
      * Create a new command instance.
@@ -51,10 +51,10 @@ class CronScheduleAnimeGenerate extends Command
      * @return mixed
      */
     public function handle(){
-        $showLog = filter_var($this->argument('show_log'), FILTER_VALIDATE_BOOLEAN);
+        // $showLog = filter_var($this->argument('show_log'), FILTER_VALIDATE_BOOLEAN);
 
         $path_log = base_path('storage/logs/generate/mysql');
-        $filename = $path_log.'/CronTrendingweekV1.json';
+        $filename = $path_log.'/CronScheduleAnimeGenerateV1.json';
         #get file log last date generate
         if(file_exists($filename)) $content = file_get_contents($filename);
         

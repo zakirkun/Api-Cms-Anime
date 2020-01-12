@@ -25,14 +25,14 @@ class CronDetailListAnimeGenerateByAlfabet extends Command
      *
      * @var string
      */
-    protected $signature = 'CronDetailListAnimeGenerateByAlfabet:DetailListAnimeGenerateByAlfabetV1  {start_by_index} {end_by_index} {start_date} {end_date} {all_list} {show_log} ';
+    protected $signature = 'CronDetailListAnimeGenerateByAlfabet:DetailListAnimeGenerateByAlfabetV1  {start_by_index} {end_by_index} {all_list}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Cron untuk generate data DetailListAnimeController';
+    protected $description = 'Cron untuk generate data CronDetailListAnimeGenerateByAlfabet';
 
     /**
      * Create a new command instance.
@@ -53,7 +53,7 @@ class CronDetailListAnimeGenerateByAlfabet extends Command
     public function handle(){
         $startByIndex = $this->argument('start_by_index');
         $EndByIndex = $this->argument('end_by_index');
-        $showLog = filter_var($this->argument('show_log'), FILTER_VALIDATE_BOOLEAN);
+        // $showLog = filter_var($this->argument('show_log'), FILTER_VALIDATE_BOOLEAN);
 
         $path_log = base_path('storage/logs/generate/mysql');
         $filename = $path_log.'/DetailListAnimeGenerateByAlfabetV1.json';
@@ -67,6 +67,7 @@ class CronDetailListAnimeGenerateByAlfabet extends Command
             'end_by_index' => substr($EndByIndex,0,1),
         ];
         $listAnime = MainModel::getDataListAnime($param);
+        
         $status = "Complete";
         $i = 0;
         $dataNotSave = array();

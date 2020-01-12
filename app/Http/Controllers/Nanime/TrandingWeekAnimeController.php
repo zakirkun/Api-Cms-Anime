@@ -15,6 +15,7 @@ use Illuminate\Support\Str;
 
 #Helpers
 use App\Helpers\V1\MappingResponseMysql as MappingMysql;
+use App\Helpers\V1\EnkripsiData as EnkripsiData;
 
 #Load Models V1
 use App\Models\V1\MainModel as MainModel;
@@ -158,13 +159,7 @@ class TrandingWeekAnimeController extends Controller
                             "Image"=>$TopListDetail[0][$i]['image'],
                             "Title"=>$TopListDetail[0][$i]['title']
                         );
-                        
-                        $result = base64_encode(json_encode($KeyListAnimEnc));
-                        $result = str_replace("=", "QRCAbuK", $result);
-                        $iduniq0 = substr($result, 0, 10);
-                        $iduniq1 = substr($result, 10, 500);
-                        $result = $iduniq0 . "QWTyu" . $iduniq1;
-                        $KeyListAnim = $result;
+                        $KeyListAnim = EnkripsiData::encodeKeyListAnime($KeyListAnimEnc);
                         
                         $Title = $TopListDetail[0][$i]['title'];
                         $Title = str_replace("Nonton anime:", "", $Title);
@@ -187,7 +182,7 @@ class TrandingWeekAnimeController extends Controller
                                         "Type"=>"",
                                         "href"=>$hrefKeyListAnim
                                     );
-                                    $KeyListAnim = self::encodeKeyLiatAnime($KeyListAnimEnc);
+                                    $KeyListAnim = EnkripsiData::encodeKeyListAnime($KeyListAnimEnc);
                                     if(empty($listAnime)){
                                         $Input = array(
                                             'code' => md5($code),
@@ -211,7 +206,7 @@ class TrandingWeekAnimeController extends Controller
                                         );
                                         $save = MainModel::updateListAnimeMysql($Update,$conditions);
                                     }
-                                    $codeListAnime['code'] = md5($cdListAnime);
+                                    $codeListAnime['code'] = md5($code);
                                     $listAnime = MainModel::getDataListAnime($codeListAnime);
                                     $idListAnime = (empty($listAnime)) ? 0 : $listAnime[0]['id'];
                                 }
@@ -264,16 +259,6 @@ class TrandingWeekAnimeController extends Controller
             }else{
                 return $this->PageNotFound();
             }
-    }
-
-    public static function encodeKeyLiatAnime($KeyListAnimEnc){
-        $result = base64_encode(json_encode($KeyListAnimEnc));
-        $result = str_replace("=", "QRCAbuK", $result);
-        $iduniq0 = substr($result, 0, 10);
-        $iduniq1 = substr($result, 10, 500);
-        $result = $iduniq0 . "QWTyu" . $iduniq1;
-        $KeyListAnim = $result;
-        return $KeyListAnim;
     }
 
     public static function SpeedResponse($awal){

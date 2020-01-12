@@ -14,10 +14,12 @@ class Kernel extends ConsoleKernel
      * @var array
      */
     protected $commands = [
+        '\App\Console\Commands\Mysql\CronLIstAnimeGenerate',
         '\App\Console\Commands\Mysql\CronDetailListAnimeGenerateByAlfabet',
         '\App\Console\Commands\Mysql\CronDetailListAnimeGenerateByDate',
         '\App\Console\Commands\Mysql\CronLastUpdateGenerate',
         '\App\Console\Commands\Mysql\CronStreamAnimeGenerateByDate',
+        '\App\Console\Commands\Mysql\CronStreamAnimeGenerateByID',
         '\App\Console\Commands\Mysql\CronTrendingweekGenerate',
         '\App\Console\Commands\Mysql\CronGenreAnimeGenerate',
         '\App\Console\Commands\Mysql\CronScheduleAnimeGenerate',
@@ -35,6 +37,12 @@ class Kernel extends ConsoleKernel
         $config = Config::get('cron/cron_config');
 
         #Cron Nanime
+        if($config['Cron_ListAnimeGenerate']) {
+            $schedule->command('CronLIstAnimeGenerate:CronLIstAnimeGenerateV1')
+                ->everyMinute() #setiap menit
+                ->appendOutputTo('/tmp/Cron_ListAnimeGenerate.log');
+        }
+
         if($config['Cron_DetailListAnimeGenerateByAlfabet']) {
             $schedule->command('CronDetailListAnimeGenerateByAlfabet:DetailListAnimeGenerateByAlfabetV1')
                 ->everyMinute() #setiap menit
@@ -53,10 +61,16 @@ class Kernel extends ConsoleKernel
                 ->appendOutputTo('/tmp/Cron_LastUpdate_Generate.log');
         }
 
-        if($config['Cron_ListEpisodeAnime_GenerateByDate']) {
+        if($config['Cron_StreamAnime_GenerateByDate']) {
             $schedule->command('CronStreamAnimeGenerateByDate:CronStreamAnimeGenerateByDateV1 ')
                 ->everyMinute() #setiap menit
-                ->appendOutputTo('/tmp/Cron_ListEpisodeAnime_GenerateByDate.log');
+                ->appendOutputTo('/tmp/Cron_StreamAnime_GenerateByDate.log');
+        }
+
+        if($config['Cron_StreamAnime_GenerateByID']) {
+            $schedule->command('CronStreamAnimeGenerateByID:CronStreamAnimeGenerateByIDV1')
+                ->everyMinute() #setiap menit
+                ->appendOutputTo('/tmp/Cron_StreamAnime_GenerateByID.log');
         }
 
         if($config['Cron_Trendingweek_Generate']) {

@@ -15,6 +15,8 @@ use Illuminate\Support\Str;
 
 #Load Helper V1
 use App\Helpers\V1\Converter as Converter;
+use App\Helpers\V1\ResponseConnected as ResponseConnected;
+use App\Helpers\V1\EnkripsiData as EnkripsiData;
 
 #Load Models V1
 use App\Models\V1\MainModel as MainModel;
@@ -38,8 +40,8 @@ class DetailListAnimeController extends Controller
         
         if($Token){
             // try{
-                $findCode=strstr($KeyListAnim,'QWTyu');
-                $KeyListDecode=$this->DecodeKeylistAnime($KeyListAnim);
+                $findCode = strstr($KeyListAnim,'QWTyu');
+                $KeyListDecode = EnkripsiData::DecodeKeylistAnime($KeyListAnim);
                 if($findCode){
                     if($KeyListDecode){
                         $subHref=$KeyListDecode->href;
@@ -48,119 +50,20 @@ class DetailListAnimeController extends Controller
                         $BASE_URL_LIST=$subHref;
                         return $this->SingleListAnimeValue($BASE_URL_LIST,$BASE_URL,$awal);
                     }else{
-                        return $this->InvalidKey();
+                        return ResponseConnected::InvalidKey("Detail Anime","Invalid Key", $awal);
                     }                
                 }else{
-                    return $this->InvalidKey();
+                    return ResponseConnected::InvalidKey("Detail Anime","Invalid Key", $awal);
                 }
             // }catch(\Exception $e){
-            //     return $this->InternalServerError();
+            //     return ResponseConnected::InternalServerError("Detail Anime","Internal Server Error");
             // }
             
         }else{
-            return $this->InvalidToken();
+            return ResponseConnected::InvalidToken("Detail Anime","Invalid Token", $awal);
         }
-        
     }
-    public function InternalServerError(){
-        $API_TheMovie=array(
-            "API_TheMovieRs"=>array(
-                "Version"=> "N.1",
-                "Timestamp"=> Carbon::now()->format(DATE_ATOM),
-                "NameEnd"=>"Single List Anime",
-                "Status"=> "Not Complete",
-                "Message"=>array(
-                    "Type"=> "Info",
-                    "ShortText"=> "Internal Server Error",
-                    "Code" => 500
-                ),
-                "Body"=> array()
-            )
-        );
-        return $API_TheMovie;
-    }
-
-    public function Success($save,$LogSave,$awal){
-        $API_TheMovie=array(
-            "API_TheMovieRs"=>array(
-                "Version"=> "N.1",
-                "Timestamp"=> Carbon::now()->format(DATE_ATOM),
-                "NameEnd"=>"Single List Anime",
-                "Status"=> "Complete",
-                "Message"=>array(
-                    "Type"=> "Info",
-                    "ShortText"=> "Success.",
-                    "Speed" => self::SpeedResponse($awal),
-                    "Code" => 200
-                ),
-                "LogBody"=> array(
-                    "DataLog"=>$LogSave
-                )
-            )
-        );
-        return $API_TheMovie;
-    }
-    public function InvalidKey(){
-        $API_TheMovie=array(
-            "API_TheMovieRs"=>array(
-                "Version"=> "N.1",
-                "Timestamp"=> Carbon::now()->format(DATE_ATOM),
-                "NameEnd"=>"Single List Anime",
-                "Status"=> "Not Complete",
-                "Message"=>array(
-                    "Type"=> "Info",
-                    "ShortText"=> "Invalid Key",
-                    "Code" => 401
-                ),
-                "Body"=> array()
-            )
-        );
-        return $API_TheMovie;
-    }
-    public function PageNotFound(){
-        $API_TheMovie=array(
-            "API_TheMovieRs"=>array(
-                "Version"=> "N.1",
-                "Timestamp"=> Carbon::now()->format(DATE_ATOM),
-                "NameEnd"=>"Single List Anime",
-                "Status"=> "Not Complete",
-                "Message"=>array(
-                    "Type"=> "Info",
-                    "ShortText"=> "Page Not Found.",
-                    "Code" => 404
-                ),
-                "Body"=> array()
-            )
-        );
-        return $API_TheMovie;
-    }
-    public function InvalidToken(){
-        $API_TheMovie=array(
-            "API_TheMovieRs"=>array(
-                "Version"=> "N.1",
-                "Timestamp"=> Carbon::now()->format(DATE_ATOM),
-                "NameEnd"=>"Single List Anime",
-                "Status"=> "Not Complete",
-                "Message"=>array(
-                    "Type"=> "Info",
-                    "ShortText"=> "Invalid Token",
-                    "Code" => 203
-                ),
-                "Body"=> array()
-            )
-        );
-        return $API_TheMovie;
-    }
-    public function DecodeKeylistAnime($KeyListAnim){
-        $decode = str_replace('QRCAbuK', "=", $KeyListAnim);
-        $iduniq0 = substr($decode, 0, 10);
-        $iduniq1 = substr($decode, 10,500);
-        $result = $iduniq0 . "" . $iduniq1;
-        $decode2 = str_replace('QWTyu', "", $result);
-        $KeyListDecode= json_decode(base64_decode($decode2));
-        return $KeyListDecode;
-    }
-
+    
     public function SingleListAnimeValue($BASE_URL_LIST,$BASE_URL,$awal){
         $client = new Client(['cookies' => new FileCookieJar('cookies.txt')]);
         $client->getConfig('handler')->push(CloudflareMiddleware::create());
@@ -289,9 +192,8 @@ class DetailListAnimeController extends Controller
             }
             
             // Get the latest post in this category and display the titles
-            
             if($SubListDetail){
-                $genree="";
+                $genree = "";
                 $Title = trim(strtok($SubListDetail[0]['subDetail']['Title'],'<'));
                 $Title = str_replace('&amp;','',$Title);
                 if($Title == "Email"){
@@ -300,8 +202,8 @@ class DetailListAnimeController extends Controller
                 
                 $Synopsis = trim($SubListDetail[0]['synopsis']);
                 $SubGenre =  $SubListDetail[0]['genre'];
-                for($i=0;$i<count($SubGenre);$i++){
-                    $genree .=strtok($SubListDetail[0]['genre'][$i],'<').'| ';
+                for($i = 0 ; $i < count($SubGenre) ; $i++){
+                    $genree .= strtok($SubListDetail[0]['genre'][$i],'<').'| ';
                 }
                 
                 $Tipe = "";
@@ -310,7 +212,7 @@ class DetailListAnimeController extends Controller
                 $Score = strtok($SubListDetail[0]['subDetail']['Votes'], '<');
                 $Rating = strtok($SubListDetail[0]['subDetail']['Rating'], '<');
                 $Studio = "";
-                $Episode=strtok($SubListDetail[0]['subDetail']['TotalEpisode'], '<');
+                $Episode = strtok($SubListDetail[0]['subDetail']['TotalEpisode'], '<');
                 $Duration = "";
                 $GenreList = rtrim($genree,"|");
                 $imageUrl = $SubListDetail[0]['image'];
@@ -328,13 +230,13 @@ class DetailListAnimeController extends Controller
                         
                         if(empty($listAnime) || $idListAnime == 0){
                             $slugListAnime = $Slug;
-                            $KeyListAnimEnc= array(
+                            $KeyListAnimEnc = array(
                                 "Title"=>trim($Title),
                                 "Image"=>"",
                                 "Type"=>"",
                                 "href"=>$BASE_URL_LIST
                             );
-                            $KeyListAnim = self::encodeKeyLiatAnime($KeyListAnimEnc);
+                            $KeyListAnim = EnkripsiData::encodeKeyListAnime($KeyListAnimEnc);
                             if(empty($listAnime)){
                                 $Input = array(
                                     'code' => md5($cdListAnime),
@@ -356,11 +258,11 @@ class DetailListAnimeController extends Controller
                                     'cron_at' => Carbon::now()->format('Y-m-d H:i:s')
                                 );
                                 $save = MainModel::updateListAnimeMysql($Update,$conditions);
-                                $codeListAnime['code'] = md5($cdListAnime);
-                                $listAnime = MainModel::getDataListAnime($codeListAnime);
-                                $idListAnime = (empty($listAnime)) ? 0 : $listAnime[0]['id'];
                             }
                         }
+                        $codeListAnime['code'] = md5($cdListAnime);
+                        $listAnime = MainModel::getDataListAnime($codeListAnime);
+                        $idListAnime = (empty($listAnime)) ? 0 : $listAnime[0]['id'];
                     }#End save To list Anime
 
                     {#save to Detail Anime
@@ -420,12 +322,12 @@ class DetailListAnimeController extends Controller
                     }#End save to Detail Anime
 
                 }#End Save To Mysql
-                return $this->Success($save,$LogSave,$awal);
+                return ResponseConnected::Success("Detail Anime", $save, $LogSave, $awal);
             }else{
-                return $this->PageNotFound();
+                return ResponseConnected::PageNotFound("Detail Anime","Page Not Found.", $awal);
             }
         }else{
-            return $this->PageNotFound();
+            return ResponseConnected::PageNotFound("Detail Anime","Page Not Found.", $awal);
         }
     }
 
@@ -442,6 +344,8 @@ class DetailListAnimeController extends Controller
                 "Episode"=>$SubListDetail[0]['DataEps'][0][$i]['nameEps'],
                 
             );
+            $KeyEpisode = EnkripsiData::encodeKeyEpisodeAnime($KeyEpisodeEnc);
+
             $hrefEpisode = $SubListDetail[0]['DataEps'][0][$i]['href'];
             $SlugEpisode = substr($hrefEpisode, strrpos($hrefEpisode, '/' )+1);
             $SlugEpisode = str_replace("-00","-",$SlugEpisode);
@@ -450,12 +354,6 @@ class DetailListAnimeController extends Controller
             $Episode = $SubListDetail[0]['DataEps'][0][$i]['nameEps'];
             $code = ($TipeMovie == "movie") ? $SlugEpisode."-".$TipeMovie : $SlugEpisode;
             $SlugEpisode = ($TipeMovie == "movie") ? $SlugEpisode."-".$TipeMovie : $SlugEpisode;
-            $result = base64_encode(json_encode($KeyEpisodeEnc));
-            $result = str_replace("=", "QRCAbuK", $result);
-            $iduniq0 = substr($result, 0, 10);
-            $iduniq1 = substr($result, 10, 500);
-            $result = $iduniq0 . "QtYWL" . $iduniq1;
-            $KeyEpisode = $result;
             
             $paramCheck['code'] = md5($code);
             $codeDetailAnime['code'] = md5(Str::slug($Title));
@@ -495,24 +393,6 @@ class DetailListAnimeController extends Controller
         return $LogSave;
     }
 
-    public static function encodeKeyLiatAnime($KeyListAnimEnc){
-        $result = base64_encode(json_encode($KeyListAnimEnc));
-        $result = str_replace("=", "QRCAbuK", $result);
-        $iduniq0 = substr($result, 0, 10);
-        $iduniq1 = substr($result, 10, 500);
-        $result = $iduniq0 . "QWTyu" . $iduniq1;
-        $KeyListAnim = $result;
-        return $KeyListAnim;
-    }
-
-    public static function SpeedResponse($awal){
-        $akhir = microtime(true);
-        $durasi = $akhir - $awal;
-        $jam = (int)($durasi/60/60);
-        $menit = (int)($durasi/60) - $jam*60;
-        $detik = $durasi - $jam*60*60 - $menit*60;
-        return $kecepatan = number_format((float)$detik, 2, '.', '');
-    }
 
     public static function filterCodeDetailAnime($href){
         $hrefDetailAnime = $href;

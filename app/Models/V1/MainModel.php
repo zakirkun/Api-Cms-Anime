@@ -550,6 +550,7 @@ class MainModel extends Model
     #================  getDataListEpisodeAnime ==================================
     public static function getDataListEpisodeAnime($params = []){
         $code = (isset($params['code']) ? $params['code'] : '');
+        $id = (isset($params['id']) ? $params['id'] : '');
         $startDate = (isset($params['start_date']) ? $params['start_date'] : '');
         $endDate = (isset($params['end_date']) ? $params['end_date'] : '');
         
@@ -559,6 +560,7 @@ class MainModel extends Model
             ->table($tabel_name);
         
         if(!empty($code)) $query = $query->where('code', '=', $code);
+        if(!empty($id)) $query = $query->where('id', '=', $id);
 
         if(!empty($startDate) && empty($endDate)) $query = $query->where('cron_at', '>=', $startDate);
         if($startDate && $endDate) $query = $query->whereBetween('cron_at', [$startDate, $endDate]);

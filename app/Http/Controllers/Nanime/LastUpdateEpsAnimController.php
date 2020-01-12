@@ -18,6 +18,8 @@ use Illuminate\Support\Str;
 #Helpers
 use App\Helpers\V1\MappingResponseMysql as MappingMysql;
 use App\Helpers\V1\Converter as Converter;
+use App\Helpers\V1\ResponseConnected as ResponseConnected;
+use App\Helpers\V1\EnkripsiData as EnkripsiData;
 
 #Load Controller
 use App\Http\Controllers\Nanime\DetailListAnimeController;
@@ -43,7 +45,6 @@ class LastUpdateEpsAnimController extends Controller
             $ApiKey = (isset($params['params']['X-API-KEY']) ? ($params['params']['X-API-KEY']) : '');
             $PageNumber = (isset($params['params']['PageNumber'])? ($params['params']['PageNumber']) : 1);
         }
-        
         $Users = MainModel::getUser($ApiKey);
         $Token = $Users[0]['token'];
         if($Token){
@@ -57,111 +58,12 @@ class LastUpdateEpsAnimController extends Controller
                 }
                 return $this->LastUpdateAnimValue($PageNumber,$BASE_URL_LIST,$BASE_URL,$awal);
             // }catch(\Exception $e){
-            //     return $this->InternalServerError();
+            //     return ResponseConnected::InternalServerError("Last Update Anime","Internal Server Error",$awal);
             // }
             
         }else{
-            return $this->InvalidToken();
+            return ResponseConnected::InvalidToken("Last Update Anime","Page Not Found.", $awal);
         }
-
-        
-    }
-
-    public function generateLastUpdateAnime(Request $request){
-        $awal = microtime(true);        
-        $ApiKey=$request->header("X-API-KEY");
-        $PageNumber=$request->header("PageNumber") ? $request->header("PageNumber") : 1;
-        $Users = MainModel::getUser($ApiKey);
-        $Token = $Users[0]['token'];
-        if($Token){
-            try{
-
-                return $this->LastUpdateGenerateValue($PageNumber,$BASE_URL_LIST,$BASE_URL,$awal);
-            }catch(\Exception $e){
-                return $this->InternalServerError();
-            }
-        }else{
-            return $this->InvalidToken();
-        }
-    }
-
-    public static function LastUpdateGenerateValue(){
-
-    }
-
-
-    
-    public function Success($Save,$LogSave,$awal){
-        $API_TheMovie=array(
-            "API_TheMovieRs"=>array(
-                "Version"=> "N.1",
-                "Timestamp"=> Carbon::now()->format(DATE_ATOM),
-                "NameEnd"=>"Last Update Anime",
-                "Status"=> "Complete",
-                "Message"=>array(
-                    "Type"=> "Info",
-                    "ShortText"=> "Success Save Mysql",
-                    "Speed" => self::SpeedResponse($awal),
-                    "Code" => 200
-                ),
-                "LogBody"=> array(
-                    "DataLog"=>$LogSave
-                )
-            )
-        );
-        return $API_TheMovie;
-    }
-
-    public function InternalServerError(){
-        $API_TheMovie=array(
-            "API_TheMovieRs"=>array(
-                "Version"=> "N.1",
-                "Timestamp"=> Carbon::now()->format(DATE_ATOM),
-                "NameEnd"=>"Last Update Anime",
-                "Status"=> "Not Complete",
-                "Message"=>array(
-                    "Type"=> "Info",
-                    "ShortText"=> "Internal Server Error",
-                    "Code" => 500
-                ),
-                "Body"=> array()
-            )
-        );
-        return $API_TheMovie;
-    }
-    public function PageNotFound(){
-        $API_TheMovie=array(
-            "API_TheMovieRs"=>array(
-                "Version"=> "N.1",
-                "Timestamp"=> Carbon::now()->format(DATE_ATOM),
-                "NameEnd"=>"Last Update Anime",
-                "Status"=> "Not Complete",
-                "Message"=>array(
-                    "Type"=> "Info",
-                    "ShortText"=> "Page Not Found.",
-                    "Code" => 404
-                ),
-                "Body"=> array()
-            )
-        );
-        return $API_TheMovie;
-    }
-    public function InvalidToken(){
-        $API_TheMovie=array(
-            "API_TheMovieRs"=>array(
-                "Version"=> "N.1",
-                "Timestamp"=> Carbon::now()->format(DATE_ATOM),
-                "NameEnd"=>"Last Update Anime",
-                "Status"=> "Not Complete",
-                "Message"=>array(
-                    "Type"=> "Info",
-                    "ShortText"=> "Invalid Token",
-                    "Code" => 203
-                ),
-                "Body"=> array()
-            )
-        );
-        return $API_TheMovie;
     }
 
     public function FilterHreftEpisode($value){
@@ -345,7 +247,7 @@ class LastUpdateEpsAnimController extends Controller
                             "Episode" => $Episode
                         );
                         
-                        $KeyEpisode = self::encodeKeyEpisodeAnime($KeyEpisodeEnc);
+                        $KeyEpisode = EnkripsiData::encodeKeyEpisodeAnime($KeyEpisodeEnc);
                         
                         {#save Data to mysql
                             $Slug = (Str::slug($Title)."-".Str::slug($Episode));
@@ -365,7 +267,7 @@ class LastUpdateEpsAnimController extends Controller
                                         "Type"=>"",
                                         "href"=>$hrefKeyListAnim[$i]
                                     );
-                                    $KeyListAnim = self::encodeKeyListAnime($KeyListAnimEnc);
+                                    $KeyListAnim = EnkripsiData::encodeKeyListAnime($KeyListAnimEnc);
                                     
                                     if(empty($listAnime)){
                                         $Input = array(
@@ -414,7 +316,7 @@ class LastUpdateEpsAnimController extends Controller
                                         "href"=>$hrefKeyListAnim[$i]
                                     );
                                     
-                                    $KeyListAnim = self::encodeKeyListAnime($KeyListAnimEnc);
+                                    $KeyListAnim = EnkripsiData::encodeKeyListAnime($KeyListAnimEnc);
                                     
                                     $listDataAnime = [
                                         'params' => [
@@ -482,22 +384,19 @@ class LastUpdateEpsAnimController extends Controller
                                 }
                             }#End save to Data Last Update
 
-                        }#End save Data to mysql
-                        
+                        }#End save Data to mysql   
                     }
-                    return $this->Success($save,$LogSave,$awal);
+                    return ResponseConnected::Success("Last Update Anime", $save, $LogSave, $awal);
                 }else{
-                    return $this->PageNotFound();
+                    return ResponseConnected::PageNotFound("Last Update Anime","Page Not Found.", $awal);
                 }
-                
             }else{
-                return $this->PageNotFound();
+                return ResponseConnected::PageNotFound("Last Update Anime","Page Not Found.", $awal);
             }
         }else{
-            return $this->PageNotFound();
+            return ResponseConnected::PageNotFound("Last Update Anime","Page Not Found.", $awal);
         }
     }
-
     public static function filterCodeEpisodeAnime($href){
         $hrefEpisode = $href;
         $SlugEpisode = substr($hrefEpisode, strrpos($hrefEpisode, '/' )+1);
@@ -508,34 +407,6 @@ class LastUpdateEpsAnimController extends Controller
         return $SlugListEp;
     }
 
-    public static function encodeKeyListAnime($KeyListAnimEnc){
-        $result = base64_encode(json_encode($KeyListAnimEnc));
-        $result = str_replace("=", "QRCAbuK", $result);
-        $iduniq0 = substr($result, 0, 10);
-        $iduniq1 = substr($result, 10, 500);
-        $result = $iduniq0 . "QWTyu" . $iduniq1;
-        $KeyListAnim = $result;
-        return $KeyListAnim;
-    }
-
-    public static function encodeKeyEpisodeAnime($KeyEpisodeEnc){
-        $result = base64_encode(json_encode($KeyEpisodeEnc));
-        $result = str_replace("=", "QRCAbuK", $result);
-        $iduniq0 = substr($result, 0, 10);
-        $iduniq1 = substr($result, 10, 500);
-        $result = $iduniq0 . "QtYWL" . $iduniq1;
-        $KeyEpisode = $result;
-        return $KeyEpisode;
-    }
-
-    public static function SpeedResponse($awal){
-        $akhir = microtime(true);
-        $durasi = $akhir - $awal;
-        $jam = (int)($durasi/60/60);
-        $menit = (int)($durasi/60) - $jam*60;
-        $detik = $durasi - $jam*60*60 - $menit*60;
-        return $kecepatan = number_format((float)$detik, 2, '.', '');
-    }
     public static function filterCodeDetailAnime($href){
         $hrefDetailAnime = $href;
         $SlugAnime = substr($hrefDetailAnime, strrpos($hrefDetailAnime, '/' )+1);

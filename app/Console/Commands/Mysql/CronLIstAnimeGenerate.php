@@ -7,7 +7,7 @@ use \Illuminate\Http\Request;
 use \Illuminate\Http\Response;
 
 #Load Controller
-use App\Http\Controllers\Nanime\GenreListAnimeController;
+use App\Http\Controllers\Nanime\ListAnimeController;
 
 /*Load Component*/
 use Cache;
@@ -18,21 +18,21 @@ use Carbon\Carbon;
 use App\Models\V1\MainModel as MainModel;
 
 
-class CronGenreAnimeGenerate extends Command
+class CronLIstAnimeGenerate extends Command
 {
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'CronGenreAnimeGenerate:CronGenreAnimeGenerateV1';
+    protected $signature = 'CronLIstAnimeGenerate:CronLIstAnimeGenerateV1';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Cron untuk generate data CronGenreAnimeGenerateV1';
+    protected $description = 'Cron untuk generate data CronLIstAnimeGenerate';
 
     /**
      * Create a new command instance.
@@ -42,7 +42,7 @@ class CronGenreAnimeGenerate extends Command
     public function __construct()
     {
         parent::__construct();
-        $this->GenreListAnimeController = new GenreListAnimeController();
+        $this->ListAnimeController = new ListAnimeController();
     }
 
     /**
@@ -54,21 +54,19 @@ class CronGenreAnimeGenerate extends Command
         // $showLog = filter_var($this->argument('show_log'), FILTER_VALIDATE_BOOLEAN);
 
         $path_log = base_path('storage/logs/generate/mysql');
-        $filename = $path_log.'/CronGenreAnimeGenerateV1.json';
+        $filename = $path_log.'/CronLIstAnimeGenerateV1.json';
         #get file log last date generate
         if(file_exists($filename)) $content = file_get_contents($filename);
         
         $response = [];
         $status = "Complete";
-        $i = 0;
-        $dataNotSave = array();
-        $GenreListAnime = [
+        $ListAnime = [
             'params' => [
                 'X-API-KEY' => env('X_API_KEY',''),
             ]
         ];
         try{
-            $data = $this->GenreListAnimeController->GenreListAnime(NULL,$GenreListAnime);
+            $data = $this->ListAnimeController->ListAnime(NULL,$ListAnime);
             echo json_encode($data)."\n\n";
         }catch(\Exception $e){
             $status = 'Not Complete';

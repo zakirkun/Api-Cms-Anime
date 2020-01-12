@@ -15,6 +15,10 @@ use Symfony\Component\Panther\Client as Client2;
 use \Sunra\PhpSimple\HtmlDomParser;
 use Illuminate\Support\Str;
 
+#Load Helper V1
+use App\Helpers\V1\ResponseConnected as ResponseConnected;
+use App\Helpers\V1\EnkripsiData as EnkripsiData;
+
 #Load Models V1
 use App\Models\V1\MainModel as MainModel;
 
@@ -38,56 +42,55 @@ class StreamAnimeController extends Controller
             $PrevEpisode = "";
             if($Token){
                 // try{
-                    $findCode=strstr($KeyEpisode,'QtYWL');
-                    $KeyListDecode= $this->DecodeKeyListAnim($KeyEpisode);
+                    $findCode = strstr($KeyEpisode,'QtYWL');
+                    $KeyListDecode = EnkripsiData::DecodeKeyListEps($KeyEpisode);
                     if($findCode){
                         if($KeyListDecode){
-                            $subHref=$KeyListDecode->href;
+                            $subHref = $KeyListDecode->href;
                             $ConfigController = new ConfigController();
-                            $BASE_URL=$ConfigController->BASE_URL_ANIME_1;
+                            $BASE_URL = $ConfigController->BASE_URL_ANIME_1;
                             if($NextEpisode){
-                                $findCode=strstr($NextEpisode,'MTrU');
+                                $findCode = strstr($NextEpisode,'MTrU');
                                 if($findCode){
-                                    $KeyPagiDecode = $this->DecodePaginationEps($NextEpisode);
-                                    $URL_Next=$KeyPagiDecode->href;
-                                    $BASE_URL_LIST=$URL_Next;
+                                    $KeyPagiDecode = EnkripsiData::DecodePaginationEps($NextEpisode);
+                                    $URL_Next = $KeyPagiDecode->href;
+                                    $BASE_URL_LIST = $URL_Next;
                                     return $this->StreamValue($BASE_URL_LIST,$BASE_URL,$awal);
                                 }else{
-                                    return $this->InvalidKeyPagination();
+                                    return ResponseConnected::InvalidKeyPagination("Stream Anime","Invalid Pagination", $awal);
                                 }
                             }elseif($PrevEpisode){
-                                $findCode=strstr($PrevEpisode,'MTrU');
+                                $findCode = strstr($PrevEpisode,'MTrU');
                                 if($findCode){
-                                    $KeyPagiDecode = $this->DecodePaginationEps($PrevEpisode);
-                                    $URL_PREV=$KeyPagiDecode->href;
-                                    $BASE_URL_LIST=$URL_PREV;
+                                    $KeyPagiDecode = EnkripsiData::DecodePaginationEps($PrevEpisode);
+                                    $URL_PREV = $KeyPagiDecode->href;
+                                    $BASE_URL_LIST = $URL_PREV;
                                     return $this->StreamValue($BASE_URL_LIST,$BASE_URL,$awal);
                                 }else{
-                                    return $this->InvalidKeyPagination();
+                                    return ResponseConnected::InvalidKeyPagination("Stream Anime","Invalid Pagination", $awal);
                                 }
                             }else{
-                                $BASE_URL_LIST=$subHref;
+                                $BASE_URL_LIST = $subHref;
                                 return $this->StreamValue($BASE_URL_LIST,$BASE_URL,$awal);
                             }
                         }else{
-                            return $this->InvalidKey();
+                            return ResponseConnected::InvalidKey("Stream Anime","Invalid Key", $awal);
                         }
                         
                     }else{
-                        return $this->InvalidKey();
+                        return ResponseConnected::InvalidKey("Stream Anime","Invalid Key", $awal);
                     }
 
                 // }catch(\Exception $e){
-                //     return $this->InternalServerError();
+                //     return ResponseConnected::InternalServerError("Stream Anime","Internal Server Error",$awal);
                 // }
                 
             }else{
-                return $this->InvalidToken();
+                return ResponseConnected::InvalidToken("Stream Anime","Invalid Token", $awal);
             }
         }
 
         public function StreamValue($BASE_URL_LIST,$BASE_URL,$awal){
-            
             $client = new Client(['cookies' => new FileCookieJar('cookies.txt')]);
             $client->getConfig('handler')->push(CloudflareMiddleware::create());
             $goutteClient = new GoutteClient();
@@ -169,7 +172,6 @@ class StreamAnimeController extends Controller
                         $LinkNowEpisode=substr($BASE_URL_LIST, strrpos($BASE_URL_LIST, '-' )+1);
                         $NowEpisode=str_replace("/","",$LinkNowEpisode);
                         
-                        
                         $Title = strtok($SubListDetail[0]['subDetail']['Title'],'<');
                         $Title = trim($Title);
                         $GenreList = str_replace("</a>","| ",implode($SubListDetail[0]['genre']));
@@ -200,9 +202,15 @@ class StreamAnimeController extends Controller
                             $HrefSingleList= $BASE_URL_LIST;
                             $HrefNext = "";
                         }
-                        $NextEpisode = $this->EncriptPaginationEps($HrefNext);
-                        $KeyListAnim = $this->EncriptKeyListAnim(trim($Title),$HrefSingleList); 
-                        $PrevEpisode = $this->EncriptPaginationEps($HrefPrev); 
+                        $KeyListAnimEnc= array(
+                            "Title"=>$Title,
+                            "Image"=>"",
+                            "href"=>$HrefSingleList
+                        );
+
+                        $NextEpisode = EnkripsiData::encodePaginationEps($HrefNext);
+                        $KeyListAnim = EnkripsiData::encodeKeyListAnime($KeyListAnimEnc); 
+                        $PrevEpisode = EnkripsiData::encodePaginationEps($HrefPrev); 
                         if(empty($HrefPrev)){
                             $PrevEpisode="";
                         }
@@ -216,7 +224,6 @@ class StreamAnimeController extends Controller
                     }#End List Property
 
                     {#cek query Relasi
-
                         {# Save List Anime
                             $cdListAnime = Str::slug($Title);
                             $codeListAnime['code'] = md5($cdListAnime);
@@ -231,7 +238,7 @@ class StreamAnimeController extends Controller
                                     "href"=>$BASE_URL_LIST
                                 );
                                 if(empty($listAnime)){
-                                    $KeyListAnim = self::encodeKeyListAnime($KeyListAnimEnc);
+                                    $KeyListAnim = EnkripsiData::encodeKeyListAnime($KeyListAnimEnc);
                                     $Input = array(
                                         'code' => md5(Str::slug($Title)),
                                         'slug' => Str::slug($Title),
@@ -275,7 +282,7 @@ class StreamAnimeController extends Controller
                                     "Type"=>"",
                                     "href"=>$hrefKeyListAnim[$i]
                                 );
-                                $KeyListAnim = self::encodeKeyListAnime($KeyListAnimEnc);
+                                $KeyListAnim = EnkripsiData::encodeKeyListAnime($KeyListAnimEnc);
                                 $listDataAnime = [
                                     'params' => [
                                         'X-API-KEY' => env('X_API_KEY',''),
@@ -390,12 +397,12 @@ class StreamAnimeController extends Controller
                         }#Endsave to StreamAnime
                     }#End cek query Relasi
 
-                    return $this->Success($save,$LogSave,$awal);
+                    return ResponseConnected::Success("Stream Anime", $save, $LogSave, $awal);
                 }else{
-                    return $this->PageNotFound();
+                    return ResponseConnected::PageNotFound("Stream Anime","Page Not Found.", $awal);
                 }
             }else{
-                return $this->PageNotFound();
+                return ResponseConnected::PageNotFound("Stream Anime","Page Not Found.", $awal);
             }
         }
 
@@ -437,200 +444,12 @@ class StreamAnimeController extends Controller
             return $LogSave;
         }
 
-        public static function encodeKeyListAnime($KeyListAnimEnc){
-            $result = base64_encode(json_encode($KeyListAnimEnc));
-            $result = str_replace("=", "QRCAbuK", $result);
-            $iduniq0 = substr($result, 0, 10);
-            $iduniq1 = substr($result, 10, 500);
-            $result = $iduniq0 . "QWTyu" . $iduniq1;
-            $KeyListAnim = $result;
-            return $KeyListAnim;
-        }
-
-        public static function encodeKeyListEpisode($KeyEpisodeEnc){
-            $result = base64_encode(json_encode($KeyEpisodeEnc));
-            $result = str_replace("=", "QRCAbuK", $result);
-            $iduniq0 = substr($result, 0, 10);
-            $iduniq1 = substr($result, 10, 500);
-            $result = $iduniq0 . "QtYWL" . $iduniq1;
-            $KeyEpisode = $result;
-            return $KeyEpisode;
-        }
-
-        public function Success($save,$LogSave,$awal){
-            $API_TheMovie = array(
-                "API_TheMovieRs" =>array(
-                    "Version" => "N.1",
-                    "Timestamp" => Carbon::now()->format(DATE_ATOM),
-                    "NameEnd" =>"Stream Anime",
-                    "Status" => "Complete",
-                    "Message" => array(
-                        "Type" => "Info",
-                        "ShortText" => "Success.",
-                        "Speed" => self::SpeedResponse($awal),
-                        "Code" => 200
-                    ),
-                    "LogBody"=> array(
-                        "DataLog"=>$LogSave
-                    )
-                )
-            );
-            return $API_TheMovie;
-        }
-        public function InvalidKeyPagination(){
-            $API_TheMovie = array(
-                "API_TheMovieRs" =>array(
-                    "Version" => "N.1",
-                    "Timestamp" => Carbon::now()->format(DATE_ATOM),
-                    "NameEnd" =>"Stream Anime",
-                    "Status" => "Not Complete",
-                    "Message" => array(
-                        "Type" => "Info",
-                        "ShortText" => "Invalid Key Pagination",
-                        "Code" => 401
-                    ),
-                    "Body"=> array(
-                        "StreamAnime" => array()
-                    )
-                )
-            );
-            return $API_TheMovie;
-        }
-        public function InvalidKey(){
-            $API_TheMovie = array(
-                "API_TheMovieRs" =>array(
-                    "Version" => "N.1",
-                    "Timestamp" => Carbon::now()->format(DATE_ATOM),
-                    "NameEnd" =>"Stream Anime",
-                    "Status" => "Not Complete",
-                    "Message" =>array(
-                        "Type" => "Info",
-                        "ShortText" => "Invalid Key",
-                        "Code" => 401
-                    ),
-                    "Body" => array(
-                        "StreamAnime" => array()
-                    )
-                )
-            );
-            return $API_TheMovie;
-        }
-        public function PageNotFound(){
-            $API_TheMovie = array(
-                "API_TheMovieRs" =>array(
-                    "Version" => "N.1",
-                    "Timestamp" => Carbon::now()->format(DATE_ATOM),
-                    "NameEnd" =>"Stream Anime",
-                    "Status" => "Not Complete",
-                    "Message" =>array(
-                        "Type" => "Info",
-                        "ShortText" => "Page Not Found",
-                        "Code" => 404
-                    ),
-                    "Body" => array(
-                        "StreamAnime" =>array()
-                    )
-                )
-            );
-            return $API_TheMovie;
-        }
-        public function InternalServerError(){
-            $API_TheMovie = array(
-                "API_TheMovieRs" =>array(
-                    "Version" => "N.1",
-                    "Timestamp" => Carbon::now()->format(DATE_ATOM),
-                    "NameEnd" =>"Stream Anime",
-                    "Status" => "Not Complete",
-                    "Message" =>array(
-                        "Type" => "Info",
-                        "ShortText" => "Internal Server Error",
-                        "Code" => 500
-                    ),
-                    "Body" => array(
-                        "StreamAnime" => array()
-                    )
-                )
-            );
-            return $API_TheMovie;
-        }
-
-        public function InvalidToken(){
-            $API_TheMovie = array(
-                "API_TheMovieRs" => array(
-                    "Version" => "N.1",
-                    "Timestamp" => Carbon::now()->format(DATE_ATOM),
-                    "NameEnd" => "Stream Anime",
-                    "Status" => "Not Complete",
-                    "Message" => array(
-                        "Type" => "Info",
-                        "ShortText" => "Invalid Token",
-                        "Code" => 203
-                    ),
-                    "Body" => array(
-                        "StreamAnime" => array()
-                    )
-                )
-            );
-            return $API_TheMovie;
-        }
 
         public function FilterIframe($value){
             $valueOnclick = str_replace("changeDivContent","",$value);
             $filterValue = substr($valueOnclick, strpos($valueOnclick, '"') + 1);
             $iframe = strtok($filterValue, '"');
             return $iframe;
-        }
-
-        public function DecodePaginationEps($KeyPagination){
-            $decode = str_replace('QRCAbuK', "=", $KeyPagination);
-            $iduniq0 = substr($decode, 0, 10);
-            $iduniq1 = substr($decode, 10,500);
-            $result = $iduniq0 . "" . $iduniq1;
-            $decode2 = str_replace('MTrU', "", $result);
-            $KeyListDecode= json_decode(base64_decode($decode2));
-            return $KeyListDecode;
-        }
-
-        public function DecodeKeyListAnim($KeyEpisode){
-            $decode = str_replace('QRCAbuK', "=", $KeyEpisode);
-            $iduniq0 = substr($decode, 0, 10);
-            $iduniq1 = substr($decode, 10,500);
-            $result = $iduniq0 . "" . $iduniq1;
-            $decode2 = str_replace('QtYWL', "", $result);
-            $KeyListDecode= json_decode(base64_decode($decode2));
-            return $KeyListDecode;
-        }
-
-        public function EncriptPaginationEps($ListEncript){
-            $KeyPegiAnimEnc= array(
-                "Title"=>"",
-                "Image"=>"",
-                "href"=>$ListEncript
-            );
-            $result = base64_encode(json_encode($KeyPegiAnimEnc));
-            $result = str_replace("=", "QRCAbuK", $result);
-            $iduniq0 = substr($result, 0, 10);
-            $iduniq1 = substr($result, 10, 500);
-            $result = $iduniq0 . "MTrU" . $iduniq1;
-            $KeyEncript = $result;
-
-            return $KeyEncript;
-        }
-
-        public function EncriptKeyListAnim($Title,$ListEncript){
-            $KeyListAnimEnc= array(
-                "Title"=>$Title,
-                "Image"=>"",
-                "href"=>$ListEncript
-            );
-            $result = base64_encode(json_encode($KeyListAnimEnc));
-            $result = str_replace("=", "QRCAbuK", $result);
-            $iduniq0 = substr($result, 0, 10);
-            $iduniq1 = substr($result, 10, 500);
-            $result = $iduniq0 . "QWTyu" . $iduniq1;
-            $KeyEncript = $result;
-
-            return $KeyEncript;
         }
 
         public function ReverseStrrchr($haystack, $needle)
@@ -640,14 +459,5 @@ class StreamAnimeController extends Controller
                 return $haystack;
             }
             return substr($haystack, 0, $pos + 1);
-        }
-
-        public static function SpeedResponse($awal){
-            $akhir = microtime(true);
-            $durasi = $akhir - $awal;
-            $jam = (int)($durasi/60/60);
-            $menit = (int)($durasi/60) - $jam*60;
-            $detik = $durasi - $jam*60*60 - $menit*60;
-            return $kecepatan = number_format((float)$detik, 2, '.', '');
         }
 }

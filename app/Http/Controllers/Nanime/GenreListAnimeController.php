@@ -13,6 +13,10 @@ use \Carbon\Carbon;
 use \Sunra\PhpSimple\HtmlDomParser;
 use Illuminate\Support\Str;
 
+#Load Helper V1
+use App\Helpers\V1\ResponseConnected as ResponseConnected;
+use App\Helpers\V1\EnkripsiData as EnkripsiData;
+
 #Load Models V1
 use App\Models\V1\MainModel as MainModel;
 
@@ -36,86 +40,12 @@ class GenreListAnimeController extends Controller
                 $BASE_URL=$ConfigController->BASE_URL_ANIME_1;
                 return $this->GenreListAnimValue($BASE_URL_LIST,$BASE_URL,$awal);
             }catch(\Exception $e){
-                return $this->InternalServerError();
+                return ResponseConnected::InternalServerError("Genre Anime","Internal Server Error",$awal);
             }
             
         }else{
-            return $this->InvalidToken();
+            return ResponseConnected::InvalidToken("Genre Anime","Invalid Token", $awal);
         }
-    }
-    public function InternalServerError(){
-        $API_TheMovie=array(
-            "API_TheMovieRs"=>array(
-                "Version"=> "N.1",
-                "Timestamp"=> Carbon::now()->format(DATE_ATOM),
-                "NameEnd"=>"Genre List Anime",
-                "Status"=> "Not Complete",
-                "Message"=>array(
-                    "Type"=> "Info",
-                    "ShortText"=> "Internal Server Error",
-                    "Code" => 500
-                ),
-                "Body"=> array()
-            )
-        );
-        return $API_TheMovie;
-    }
-
-    public function Success($save,$LogSave,$awal){
-        $API_TheMovie=array(
-            "API_TheMovieRs"=>array(
-                "Version"=> "N.1",
-                "Timestamp"=> Carbon::now()->format(DATE_ATOM),
-                "NameEnd"=>"Genre List Anime",
-                "Status"=> "Complete",
-                "Message"=>array(
-                    "Type"=> "Info",
-                    "ShortText"=> "Success.",
-                    "Speed" => self::SpeedResponse($awal),
-                    "Code" => 200
-                ),
-                "LogBody"=> array(
-                    "DataLog"=>$LogSave
-                )
-            )
-        );
-        return $API_TheMovie;
-    }
-
-    public function PageNotFound(){
-        $API_TheMovie=array(
-            "API_TheMovieRs"=>array(
-                "Version"=> "N.1",
-                "Timestamp"=> Carbon::now()->format(DATE_ATOM),
-                "NameEnd"=>"Genre List Anime",
-                "Status"=> "Not Complete",
-                "Message"=>array(
-                    "Type"=> "Info",
-                    "ShortText"=> "Page Not Found",
-                    "Code" => 404
-                ),
-                "Body"=> array()
-            )
-        );
-        return $API_TheMovie;
-
-    }
-    public function InvalidToken(){
-        $API_TheMovie=array(
-            "API_TheMovieRs"=>array(
-                "Version"=> "N.1",
-                "Timestamp"=> Carbon::now()->format(DATE_ATOM),
-                "NameEnd"=>"Genre List Anime",
-                "Status"=> "Not Complete",
-                "Message"=>array(
-                    "Type"=> "Info",
-                    "ShortText"=> "Invalid Token",
-                    "Code" => 203
-                ),
-                "Body"=> array()
-            )
-        );
-        return $API_TheMovie;
     }
 
     public function GenreListAnimValue($BASE_URL_LIST,$BASE_URL,$awal){
@@ -162,12 +92,8 @@ class GenreListAnimeController extends Controller
                                 "Genre"=>$GenreListAnimeS[0]['subGenre'][$j]['genre'],
                                 "href"=>$BASE_URL."".$GenreListAnimeS[0]['subGenre'][$j]['href']
                             );
-                            $result = base64_encode(json_encode($KeyListGenreEnc));
-                            $result = str_replace("=", "QRCAbuK", $result);
-                            $iduniq0 = substr($result, 0, 10);
-                            $iduniq1 = substr($result, 10, 500);
-                            $result = $iduniq0 . "RqWtY" . $iduniq1;
-                            $KeyListGenre = $result;
+                            
+                            $KeyListGenre = EnkripsiData::encodeKeyListGenre($KeyListGenreEnc);
                             $Genre = $GenreListAnimeS[0]['subGenre'][$j]['genre'];
                             
                             {#Save Data List Genre
@@ -205,21 +131,13 @@ class GenreListAnimeController extends Controller
                     
                 }
                 
-                return $this->Success($save,$LogSave,$awal);
+                return ResponseConnected::Success("Genre Anime", $save, $LogSave, $awal);
             }else{
-                return $this->PageNotFound();
+                return ResponseConnected::PageNotFound("Genre Anime","Page Not Found.", $awal);
             }
         }else{
-            return $this->PageNotFound();
+            return ResponseConnected::PageNotFound("Genre Anime","Page Not Found.", $awal);
         }
     }
 
-    public static function SpeedResponse($awal){
-        $akhir = microtime(true);
-        $durasi = $akhir - $awal;
-        $jam = (int)($durasi/60/60);
-        $menit = (int)($durasi/60) - $jam*60;
-        $detik = $durasi - $jam*60*60 - $menit*60;
-        return $kecepatan = number_format((float)$detik, 2, '.', '');
-    }
 }

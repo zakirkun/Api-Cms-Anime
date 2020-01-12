@@ -18,21 +18,21 @@ use Carbon\Carbon;
 use App\Models\V1\MainModel as MainModel;
 
 
-class CronStreamAnimeGenerateByDate extends Command
+class CronStreamAnimeGenerateByID extends Command
 {
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'CronStreamAnimeGenerateByDate:CronStreamAnimeGenerateByDateV1 {start_date} {end_date}';
+    protected $signature = 'CronStreamAnimeGenerateByID:CronStreamAnimeGenerateByIDV1 {ID_ListEp_Anime} ';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Cron untuk generate data CronStreamAnimeGenerateByDateV1';
+    protected $description = 'Cron untuk generate data CronStreamAnimeGenerateByIDV1';
 
     /**
      * Create a new command instance.
@@ -51,44 +51,42 @@ class CronStreamAnimeGenerateByDate extends Command
      * @return mixed
      */
     public function handle(){
-        $startDate = $this->argument('start_date');
-        $EndDate = $this->argument('end_date');
+        $IDListEpsAnime = explode(',',$this->argument('ID_ListEp_Anime'));
         // $showLog = filter_var($this->argument('show_log'), FILTER_VALIDATE_BOOLEAN);
-
         $path_log = base_path('storage/logs/generate/mysql');
-        $filename = $path_log.'/CronStreamAnimeGenerateByDateV1.json';
+        $filename = $path_log.'/CronStreamAnimeGenerateByIDV1.json';
         #get file log last date generate
         if(file_exists($filename)) $content = file_get_contents($filename);
         
         $response = [];
-        $param = [
-            'code' => '',
-            'start_date' => $startDate,
-            'end_date' => $EndDate
-        ];
-        $listEpsAnime = MainModel::getDataListEpisodeAnime($param);
         $status = "Complete";
         $i = 0;
         $dataNotSave = array();
-        $TotalHit = (count($listEpsAnime));
-        foreach($listEpsAnime as $listEpsAnime){
-            $StreamAnime = [
-                'params' => [
-                    'X-API-KEY' => env('X_API_KEY',''),
-                    'KeyEpisode' => $listEpsAnime['key_episode']
-                ]
+        $TotalHit = (count($IDListEpsAnime));
+        for($j = 0; $j < count($IDListEpsAnime); $j++){
+            $param = [
+                'id' => $IDListEpsAnime[$j],
             ];
-            try{
-                $data = $this->StreamAnimeController->StreamAnime(NULL,$StreamAnime);
-                echo json_encode($data)."\n\n";
-                $i++;
-            }catch(\Exception $e){
-                $dataNotSave[] = array(
-                    'Episode' => $listEpsAnime['episode'],
-                    'KeyEpisode' => $listEpsAnime['key_episode'],
-                    'id' => $listEpsAnime['id']
-                );
-                $status = 'Not Complete';
+            $listEpsAnime = MainModel::getDataListEpisodeAnime($param);
+            foreach($listEpsAnime as $listEpsAnime){
+                $StreamAnime = [
+                    'params' => [
+                        'X-API-KEY' => env('X_API_KEY',''),
+                        'KeyEpisode' => $listEpsAnime['key_episode']
+                    ]
+                ];
+                try{
+                    $data = $this->StreamAnimeController->StreamAnime(NULL,$StreamAnime);
+                    echo json_encode($data)."\n\n";
+                    $i++;
+                }catch(\Exception $e){
+                    $dataNotSave[] = array(
+                        'Episode' => $listEpsAnime['episode'],
+                        'KeyEpisode' => $listEpsAnime['key_episode'],
+                        'id' => $listEpsAnime['id']
+                    );
+                    $status = 'Not Complete';
+                }
             }
         }
         $notSave = $TotalHit - $i;

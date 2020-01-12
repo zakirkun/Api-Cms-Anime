@@ -25,14 +25,14 @@ class CronLastUpdateGenerate extends Command
      *
      * @var string
      */
-    protected $signature = 'CronLastUpdateGenerate:CronLastUpdateGenerateV1  {page_number} {all_list} {show_log} ';
+    protected $signature = 'CronLastUpdateGenerate:CronLastUpdateGenerateV1  {page_number} {all_list}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Cron untuk generate data CronLastUpdateGenerate';
+    protected $description = 'Cron untuk generate data CronLastUpdateGenerateV1';
 
     /**
      * Create a new command instance.
@@ -53,10 +53,10 @@ class CronLastUpdateGenerate extends Command
     public function handle(){
         $pageNumber = $this->argument('page_number');
         $allList = filter_var($this->argument('all_list'), FILTER_VALIDATE_BOOLEAN);
-        $showLog = filter_var($this->argument('show_log'), FILTER_VALIDATE_BOOLEAN);
+        // $showLog = filter_var($this->argument('show_log'), FILTER_VALIDATE_BOOLEAN);
 
         $path_log = base_path('storage/logs/generate/mysql');
-        $filename = $path_log.'/DetailListAnimeGenerateByAlfabetV1.json';
+        $filename = $path_log.'/CronLastUpdateGenerateV1.json';
         #get file log last date generate
         if(file_exists($filename)) $content = file_get_contents($filename);
         

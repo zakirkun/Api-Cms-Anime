@@ -25,14 +25,14 @@ class CronDetailListAnimeGenerateByDate extends Command
      *
      * @var string
      */
-    protected $signature = 'CronDetailListAnimeGenerateByDate:DetailListAnimeGenerateByDateV1  {start_date} {end_date} {show_log} ';
+    protected $signature = 'CronDetailListAnimeGenerateByDate:DetailListAnimeGenerateByDateV1  {start_date} {end_date}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Cron untuk generate data DetailListAnimeController';
+    protected $description = 'Cron untuk generate data DetailListAnimeGenerateByDateV1';
 
     /**
      * Create a new command instance.
@@ -53,10 +53,10 @@ class CronDetailListAnimeGenerateByDate extends Command
     public function handle(){
         $startDate = $this->argument('start_date');
         $EndDate = $this->argument('end_date');
-        $showLog = filter_var($this->argument('show_log'), FILTER_VALIDATE_BOOLEAN);
+        // $showLog = filter_var($this->argument('show_log'), FILTER_VALIDATE_BOOLEAN);
 
         $path_log = base_path('storage/logs/generate/mysql');
-        $filename = $path_log.'/DetailListAnimeGenerateByAlfabetV1.json';
+        $filename = $path_log.'/DetailListAnimeGenerateByDateV1.json';
         #get file log last date generate
         if(file_exists($filename)) $content = file_get_contents($filename);
         
@@ -97,8 +97,8 @@ class CronDetailListAnimeGenerateByDate extends Command
 
         $response['Total_hit'] = $TotalHit;
         $response['Hit_date'] =  Carbon::now()->format(DATE_ATOM);
-        $response['Total_Data_Save'] = $i.' - Keyword index'.' - '.$startByIndex.':'.$EndByIndex;
-        $response['Total_Data_Not_Save'] = $notSave.' - Keyword index'.' - '.$startByIndex.':'.$EndByIndex;
+        $response['Total_Data_Save'] = $i;
+        $response['Total_Data_Not_Save'] = $notSave;
         $response['Data_Not_Save'] = $dataNotSave;
         $response['status'] = $status;
         echo json_encode($response)."\n\n";

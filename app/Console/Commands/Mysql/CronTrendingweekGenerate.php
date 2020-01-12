@@ -25,7 +25,7 @@ class CronTrendingweekGenerate extends Command
      *
      * @var string
      */
-    protected $signature = 'CronTrendingweekGenerate:CronTrendingweekGenerateV1  {show_log} ';
+    protected $signature = 'CronTrendingweekGenerate:CronTrendingweekGenerateV1';
 
     /**
      * The console command description.
@@ -51,10 +51,10 @@ class CronTrendingweekGenerate extends Command
      * @return mixed
      */
     public function handle(){
-        $showLog = filter_var($this->argument('show_log'), FILTER_VALIDATE_BOOLEAN);
+        // $showLog = filter_var($this->argument('show_log'), FILTER_VALIDATE_BOOLEAN);
 
         $path_log = base_path('storage/logs/generate/mysql');
-        $filename = $path_log.'/CronTrendingweekV1.json';
+        $filename = $path_log.'/CronTrendingweekGenerateV1.json';
         #get file log last date generate
         if(file_exists($filename)) $content = file_get_contents($filename);
         
