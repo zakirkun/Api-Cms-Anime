@@ -25,7 +25,7 @@ class CronLastUpdateGenerate extends Command
      *
      * @var string
      */
-    protected $signature = 'CronLastUpdateGenerate:CronLastUpdateGenerateV1  {page_number} {all_list}';
+    protected $signature = 'CronLastUpdateGenerate:CronLastUpdateGenerateV1  {page_number_first} {page_number_end} {all_list}';
 
     /**
      * The console command description.
@@ -51,7 +51,8 @@ class CronLastUpdateGenerate extends Command
      * @return mixed
      */
     public function handle(){
-        $pageNumber = $this->argument('page_number');
+        $pageNumberFirst = $this->argument('page_number_first');
+        $pageNumberEnd = ($this->argument('page_number_end')) ? $this->argument('page_number_end') : $pageNumberFirst ;
         $allList = filter_var($this->argument('all_list'), FILTER_VALIDATE_BOOLEAN);
         // $showLog = filter_var($this->argument('show_log'), FILTER_VALIDATE_BOOLEAN);
 
@@ -93,25 +94,27 @@ class CronLastUpdateGenerate extends Command
             }
             $TotDataSave = ($i - $notSaveHit);
         }else{
-            $lastUpdate = [
-                'params' => [
-                    'X-API-KEY' => env('X_API_KEY',''),
-                    'PageNumber' => $pageNumber
-                ]
-            ];
-            try{
-                $data = $this->LastUpdateEpsAnimController->LastUpdateAnime(NULL,$lastUpdate);
-                echo json_encode($data)."\n\n";
-            }catch(\Exception $e){
-                echo "Not Save Page Number :".$i."\n\n";
-                $dataNotSave[] = array(
-                    'PageNumber' => $pageNumber,
-                );
-                $status = 'Not Complete';
-                $notSaveHit = 1;
-            }
             
-            $TotDataSave = 1 - $notSaveHit;
+            for($i = $pageNumberFirst ; $i <= $pageNumberEnd ;$i++){
+                $lastUpdate = [
+                    'params' => [
+                        'X-API-KEY' => env('X_API_KEY',''),
+                        'PageNumber' => $i
+                    ]
+                ];
+                try{
+                    $data = $this->LastUpdateEpsAnimController->LastUpdateAnime(NULL,$lastUpdate);
+                    echo json_encode($data)."\n\n";
+                }catch(\Exception $e){
+                    echo "Not Save Page Number :".$i."\n\n";
+                    $dataNotSave[] = array(
+                        'PageNumber' => $pageNumber,
+                    );
+                    $status = 'Not Complete';
+                    $notSaveHit++;
+                }
+            }
+            $TotDataSave = $notSaveHit;
         }
 
         $response['Total_hit'] = $TotalHit;

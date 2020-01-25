@@ -75,7 +75,10 @@ class CronStreamAnimeGenerateByDate extends Command
             $StreamAnime = [
                 'params' => [
                     'X-API-KEY' => env('X_API_KEY',''),
-                    'KeyEpisode' => $listEpsAnime['key_episode']
+                    'KeyEpisode' => $listEpsAnime['key_episode'],
+                    'idDetailAnime' => $listEpsAnime['id_detail_anime'],
+                    'idListAnime' => $listEpsAnime['id_list_anime'],
+                    'idListEpisode' => $listEpsAnime['id']
                 ]
             ];
             try{

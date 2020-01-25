@@ -7,14 +7,13 @@ use Jenssegers\Mongodb\Eloquent\Model as Eloquent;
 
 use Config;
 
-class CollectionsModel extends Eloquent
+class CollectionDetailAnimeModel extends Eloquent
 {
     protected $connection = 'mongodb';
     protected $collection = 'contents';
-    protected $guarded = [];
     protected $primarykey = "_id";
 
     public function __construct() {
-        $this->collection = Config::get('kanalone.mongo.use_collection'); #replace $collection from env
+        $this->collection = Config::get("general_config.mongo.use_collection_detail_anime");
     }
 }

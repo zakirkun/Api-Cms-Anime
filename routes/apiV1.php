@@ -15,10 +15,7 @@ $router->group(['prefix' => 'N/1', 'namespace' => 'Nanime'], function () use ($r
     $router->post('ScheduleAnime', 'ScheduleAnimeController@ScheduleAnime');
 
     // generate to mongo
-
-    $router->post('ListAnime', 'ListAnimeController@ListAnimeGenerate');
-
-
+    $router->post('ListAnimeGenerate', 'ListAnimeController@ListAnimeGenerate');
 
 });
 

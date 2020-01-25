@@ -58,7 +58,6 @@ class DetailListAnimeController extends Controller
             // }catch(\Exception $e){
             //     return ResponseConnected::InternalServerError("Detail Anime","Internal Server Error");
             // }
-            
         }else{
             return ResponseConnected::InvalidToken("Detail Anime","Invalid Token", $awal);
         }
@@ -93,11 +92,7 @@ class DetailListAnimeController extends Controller
                     $ListDetail = $node->filter('.animeInfo > ul')->html();
                     $SubDetail01 = explode("<b", $ListDetail);
                     $deleteEmail = ['[','email','protected',']',',','@'];
-                    if (stripos((Converter::__normalizeSummary(substr($SubDetail01[1], strpos($SubDetail01[1], ":") + 1))),'[email') !== false) {
-                        $Title = "Email";    
-                    }else{
-                        $Title = substr($SubDetail01[1], strpos($SubDetail01[1], ":") + 1);
-                    }
+                    $Title = substr($SubDetail01[1], strpos($SubDetail01[1], ":") + 1);
                     
                     $SubDetail02=array(
                         "Title"=>$Title,
@@ -113,12 +108,7 @@ class DetailListAnimeController extends Controller
                         $SubDataEps =  $node->filter('a')->each(function ($node,$i) {
                             $hrefEps = $node->filter('a')->attr('href');
                             $NameEps = $node->filter('a')->text('Default text content');
-                            if (stripos((Converter::__normalizeSummary($NameEps)),'[email') !== false) {
-                                $NameEps = substr($hrefEps, strrpos($hrefEps, '/' )+1);
-                                $NameEps = str_replace("-00","-",$NameEps);
-                                $NameEps = str_replace("-0","-",$NameEps);
-                                $NameEps = str_replace("-"," ",$NameEps);
-                            }
+                            $NameEps = Converter::__normalizeNameEpsChar($NameEps,$hrefEps);
                             $SubListDetail=array(
                                 'href' => $hrefEps,
                                 'nameEps'=>$NameEps,
@@ -149,11 +139,7 @@ class DetailListAnimeController extends Controller
                     $ListDetail = $node->filter('.animeInfo > ul')->html();
                     $SubDetail01 = explode("<b", $ListDetail);
                     $deleteEmail = ['[','email','protected',']',',','@'];
-                    if (stripos((Converter::__normalizeSummary(substr($SubDetail01[1], strpos($SubDetail01[1], ":") + 1))),'[email') !== false) {
-                        $Title = "Email";    
-                    }else{
-                        $Title = substr($SubDetail01[1], strpos($SubDetail01[1], ":") + 1);
-                    }
+                    $Title = substr($SubDetail01[1], strpos($SubDetail01[1], ":") + 1);
                     
                     $SubDetail02=array(
                         "Title"=>$Title,
@@ -169,12 +155,7 @@ class DetailListAnimeController extends Controller
                     $href = $node->filter('.col-md-3 > a')->attr("href");
                     $imageUrl = $node->filter('.col-md-3 > a > img')->attr("src");
                     $NameEps = substr($SubDetail01[1], strpos($SubDetail01[1], ":") + 1);
-                    if (stripos((Converter::__normalizeSummary($NameEps)),'[email') !== false) {
-                        $NameEps = substr($hrefEps, strrpos($hrefEps, '/' )+1);
-                        $NameEps = str_replace("-00","-",$NameEps);
-                        $NameEps = str_replace("-0","-",$NameEps);
-                        $NameEps = str_replace("-"," ",$NameEps);
-                    }
+                    $NameEps = Converter::__normalizeNameEpsChar($NameEps,$href);
                     $DataEps[0][0]=array(
                         'href' => $href,
                         'nameEps'=>$NameEps,
@@ -195,9 +176,9 @@ class DetailListAnimeController extends Controller
             if($SubListDetail){
                 $genree = "";
                 $Title = trim(strtok($SubListDetail[0]['subDetail']['Title'],'<'));
-                $Title = str_replace('&amp;','',$Title);
+                $Title = Converter::__normalizeTitle($Title,$BASE_URL_LIST);
                 if($Title == "Email"){
-                    $Title = self::filterCodeDetailAnime($BASE_URL_LIST);
+                    $Title = Converter::__normalizeNameEps($BASE_URL_LIST);
                 }
                 
                 $Synopsis = trim($SubListDetail[0]['synopsis']);
@@ -221,7 +202,6 @@ class DetailListAnimeController extends Controller
                     $Slug = Str::slug($Title);
                     $code = $Slug;
                     $cdListAnime = $Slug;
-                    
 
                     {#save To list Anime
                         $codeListAnime['code'] = md5($code);
@@ -347,11 +327,9 @@ class DetailListAnimeController extends Controller
             $KeyEpisode = EnkripsiData::encodeKeyEpisodeAnime($KeyEpisodeEnc);
 
             $hrefEpisode = $SubListDetail[0]['DataEps'][0][$i]['href'];
-            $SlugEpisode = substr($hrefEpisode, strrpos($hrefEpisode, '/' )+1);
-            $SlugEpisode = str_replace("-00","-",$SlugEpisode);
-            $SlugEpisode = str_replace("-0","-",$SlugEpisode);
+            $Episode = Converter::__normalizeNameEps($hrefEpisode);
+            $SlugEpisode = Str::slug($Episode);
             $TipeMovie = (strstr($hrefEpisode,'episode')) ? "episode" : "movie";
-            $Episode = $SubListDetail[0]['DataEps'][0][$i]['nameEps'];
             $code = ($TipeMovie == "movie") ? $SlugEpisode."-".$TipeMovie : $SlugEpisode;
             $SlugEpisode = ($TipeMovie == "movie") ? $SlugEpisode."-".$TipeMovie : $SlugEpisode;
             
@@ -387,19 +365,11 @@ class DetailListAnimeController extends Controller
                 $LogSave [] =  "Data Update - ".$Episode."-".$Title;
                 $save = MainModel::updateListEpisodeMysql($Update,$conditions);
             }
-            
-            
+        
         }
         return $LogSave;
     }
 
 
-    public static function filterCodeDetailAnime($href){
-        $hrefDetailAnime = $href;
-        $SlugAnime = substr($hrefDetailAnime, strrpos($hrefDetailAnime, '/' )+1);
-        $SlugAnime = str_replace("-00","-",$SlugAnime);
-        $SlugAnime = str_replace("-0","-",$SlugAnime);
-        $SlugAnime = str_replace("-"," ",$SlugAnime);
-        return $SlugAnime;
-    }
+    
 }

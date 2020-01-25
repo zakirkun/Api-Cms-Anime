@@ -26,6 +26,8 @@ $app->withFacades();
 
 $app->withEloquent();
 $app->configure('database');
+$app->configure('general_config');
+$app->configure('mongo');
 
 /*
 |--------------------------------------------------------------------------

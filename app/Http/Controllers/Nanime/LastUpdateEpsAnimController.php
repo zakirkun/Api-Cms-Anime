@@ -30,11 +30,24 @@ use App\Models\V1\MainModel as MainModel;
 // done tinggal token db
 class LastUpdateEpsAnimController extends Controller
 {
+    /**
+     * @author [Prayugo]
+     * @create date 2020-01-25 00:03:55
+     * @desc [__construct]
+     */
+    // ================  __construct =========================================
     public function __construct()
     {
         $this->DetailListAnimeController = new DetailListAnimeController();
     }
+    // ================ End __construct =========================================
 
+    /**
+     * @author [Prayugo]
+     * @create date 2020-01-25 00:03:55
+     * @desc [LastUpdateAnime]
+     */
+    // ================  LastUpdateAnime Save To Mysql =========================================
     public function LastUpdateAnime(Request $request = NULL, $params = NULL){
         $awal = microtime(true);        
         if(!empty($request) || $request != NULL){
@@ -108,17 +121,12 @@ class LastUpdateEpsAnimController extends Controller
                     $title = $nodel->filter('.post-title')->attr("title");
                     $status =  $nodel->filter('.status')->text('Default text content');
                     $episode =  $nodel->filter('.episode')->text('Default text content');
-                    if (stripos((Converter::__normalizeSummary($titleAlias)),'[email') !== false) {
-                        $Title = "Email";
-                        $titleAlias = "Email";
-                    }else{
-                        $Title = $title;
-                    }
+                    
                     $ListUpdtnime = array(
                             "hrefSingleList" => $href,
                             "image" => $image,
                             "titleAlias" => $titleAlias,
-                            "title" => $Title,
+                            "title" => $title,
                             "status" => $status,
                             "episode" => $episode
                     );
@@ -145,7 +153,6 @@ class LastUpdateEpsAnimController extends Controller
                     
                     if($DetailHref){
                         $SubListDetail= $crawler2->filter('.col-md-7')->each(function ($node,$i) {
-
                             $synopsis = $node->filter('.description > p')->text('Default text content');
                             $Subgenre = $node->filter('.description')->html();
                             $detGenre = explode("<a", $Subgenre);
@@ -195,9 +202,7 @@ class LastUpdateEpsAnimController extends Controller
                                 "Status" => substr($SubDetail01[5], strpos($SubDetail01[5], ":") + 1),
                                 "TotalEpisode" => substr($SubDetail01[6], strpos($SubDetail01[6], ":") + 1),
                                 "HariTayang" => substr($SubDetail01[7], strpos($SubDetail01[7], ":") + 1),
-
                             );
-
                             $href = $node->filter('.col-md-3 > a')->attr("href");
                             $SubListDetail = array(
                                 "subDetail" => $SubDetail02,
@@ -227,9 +232,13 @@ class LastUpdateEpsAnimController extends Controller
                         $Image = $LastUpdateEps[0][$i]['image'];
                         $Title = $LastUpdateEps[0][$i]['title'];
                         $TitleAlias = $LastUpdateEps[0][$i]['titleAlias'];
+                        $hrefSingleList = $LastUpdateEps[0][$i]['hrefSingleList'];
+                        $Title = Converter::__normalizeNameEpsChar($Title,$hrefSingleList);
+                        $TitleAlias = Converter::__normalizeNameEpsChar($TitleAlias,$hrefSingleList);
+                        
                         if($Title == "Email"){
-                            $Title = self::filterCodeDetailAnime($LastUpdateEps[0][$i]['hrefSingleList']);
-                            $TitleAlias = self::filterCodeDetailAnime($LastUpdateEps[0][$i]['hrefSingleList']);
+                            $Title = Converter::__normalizeNameEps($LastUpdateEps[0][$i]['hrefSingleList']);
+                            $TitleAlias = Converter::__normalizeNameEps($LastUpdateEps[0][$i]['hrefSingleList']);
                         }
                         $TotalEpisode = $SingleEpisode[$i]['SingleEpisode'][0]['subDetail']['TotalEpisode'];
                         $Rating = $SingleEpisode[$i]['SingleEpisode'][0]['subDetail']['Rating'];
@@ -268,7 +277,6 @@ class LastUpdateEpsAnimController extends Controller
                                         "href"=>$hrefKeyListAnim[$i]
                                     );
                                     $KeyListAnim = EnkripsiData::encodeKeyListAnime($KeyListAnimEnc);
-                                    
                                     if(empty($listAnime)){
                                         $Input = array(
                                             'code' => md5($cdListAnime),
@@ -279,7 +287,6 @@ class LastUpdateEpsAnimController extends Controller
                                             'cron_at' => Carbon::now()->format('Y-m-d H:i:s')
                                         );
                                         $save = MainModel::insertListAnimeMysql($Input);
-                                        
                                     }else{
                                         $conditions['id'] = $idListAnime;
                                         $Update = array(
@@ -300,7 +307,7 @@ class LastUpdateEpsAnimController extends Controller
 
                             {#save to detail anime and list episode
                                 $hrefEpisode = ($SingleEpisode[$i]['SingleEpisode'][0]['hrefEpisode']);
-                                $slugListEps = self::filterCodeEpisodeAnime($hrefEpisode);
+                                $slugListEps = Converter::__filterCodeEpisodeAnime($hrefEpisode);
                                 $codeListEps['code'] = md5($slugListEps);
                                 $codeDetailAnime['code'] = md5($cdListAnime);
                                 $SlugDetailAnime = $cdListAnime;
@@ -315,9 +322,7 @@ class LastUpdateEpsAnimController extends Controller
                                         "Type"=>"",
                                         "href"=>$hrefKeyListAnim[$i]
                                     );
-                                    
                                     $KeyListAnim = EnkripsiData::encodeKeyListAnime($KeyListAnimEnc);
-                                    
                                     $listDataAnime = [
                                         'params' => [
                                             'X-API-KEY' => env('X_API_KEY',''),
@@ -326,10 +331,9 @@ class LastUpdateEpsAnimController extends Controller
                                     ];
                                     $dataDetailAnime = $this->DetailListAnimeController->DetailListAnim(NULL,$listDataAnime);
                                     $codeDetailAnime['code'] = md5($cdListAnime);
-                                    
                                 }
                                 $hrefEpisode = ($SingleEpisode[$i]['SingleEpisode'][0]['hrefEpisode']);
-                                $slugListEps = self::filterCodeEpisodeAnime($hrefEpisode);
+                                $slugListEps = Converter::__filterCodeEpisodeAnime($hrefEpisode);
                                 $codeListEps['code'] = md5($slugListEps);
                                 $codeDetailAnime['code'] = md5($cdListAnime);
                                 $SlugDetailAnime = $cdListAnime;
@@ -397,22 +401,31 @@ class LastUpdateEpsAnimController extends Controller
             return ResponseConnected::PageNotFound("Last Update Anime","Page Not Found.", $awal);
         }
     }
-    public static function filterCodeEpisodeAnime($href){
-        $hrefEpisode = $href;
-        $SlugEpisode = substr($hrefEpisode, strrpos($hrefEpisode, '/' )+1);
-        $SlugEpisode = str_replace("-00","-",$SlugEpisode);
-        $SlugEpisode = str_replace("-0","-",$SlugEpisode);
-        $TipeMovie = (strstr($hrefEpisode,'episode')) ? "episode" : "movie";
-        $SlugListEp = ($TipeMovie == "movie") ? $SlugEpisode."-".$TipeMovie : $SlugEpisode;
-        return $SlugListEp;
-    }
+    
+    // ================ End  LastUpdateAnime Save To Mysql =========================================
 
-    public static function filterCodeDetailAnime($href){
-        $hrefDetailAnime = $href;
-        $SlugAnime = substr($hrefDetailAnime, strrpos($hrefDetailAnime, '/' )+1);
-        $SlugAnime = str_replace("-00","-",$SlugAnime);
-        $SlugAnime = str_replace("-0","-",$SlugAnime);
-        $SlugAnime = str_replace("-"," ",$SlugAnime);
-        return $SlugAnime;
+    /**
+     * @author [Prayugo]
+     * @create date 2020-01-25 00:03:55
+     * @desc [generateLastUpdateAnime]
+     */
+    // ================  generateLastUpdateAnime Save To Mongo =========================================
+    public function generateLastUpdateAnime(Request $request = NULL, $params = NULL){
+        $param = $params; # get param dari populartopiclist atau dari cron
+        if(is_null($params)) $param = $request->all();
+
+        $id = (isset($param['params']['id']) ? $param['params']['id'] : NULL);
+        $code = (isset($param['params']['code']) ? $param['params']['code'] : '');
+        $slug = (isset($param['params']['slug']) ? $param['params']['slug'] : '');
+        $title = (isset($param['params']['title']) ? $param['params']['title'] : '');
+        $startNameIndex = (isset($param['params']['start_name_index']) ? $param['params']['start_name_index'] : '');
+        $endNameIndex = (isset($param['params']['end_name_index']) ? $param['params']['end_name_index'] : '');
+        $startDate = (isset($param['params']['start_date']) ? $param['params']['start_date'] : NULL);
+        $endDate = (isset($param['params']['end_date']) ? $param['params']['end_date'] : NULL);
+        $isUpdated = (isset($param['params']['is_updated']) ? filter_var($param['params']['is_updated'], FILTER_VALIDATE_BOOLEAN) : FALSE);
+
+        
     }
+    // ================ End generateLastUpdateAnime Save To Mysql =========================================
+
 }

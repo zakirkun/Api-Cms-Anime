@@ -18,23 +18,37 @@ use Illuminate\Support\Str;
 #Load Helper V1
 use App\Helpers\V1\ResponseConnected as ResponseConnected;
 use App\Helpers\V1\EnkripsiData as EnkripsiData;
+use App\Helpers\V1\Converter as Converter;
 
 #Load Models V1
 use App\Models\V1\MainModel as MainModel;
 
+#Load Controller
+use App\Http\Controllers\Nanime\DetailListAnimeController;
+
 // done but masih proses debuging
 class StreamAnimeController extends Controller
 {
+        public function __construct()
+        {
+            $this->DetailListAnimeController = new DetailListAnimeController();
+        }
     // keyEpisode
         public function StreamAnime(Request $request = NULL, $params = NULL){
             $awal = microtime(true);
             if(!empty($request) || $request != NULL){
                 $ApiKey = $request->header("X-API-KEY");
                 $KeyEpisode = $request->header("KeyEpisode");
+                $idDetailAnime_ = $request->header("idDetailAnime");
+                $idListAnime_ = $request->header("idListAnime");
+                $idListEpisode_ = $request->header("idListEpisode");
             }
             if(!empty($params) || $params != NULL){
                 $ApiKey = (isset($params['params']['X-API-KEY']) ? ($params['params']['X-API-KEY']) : '');
                 $KeyEpisode = (isset($params['params']['KeyEpisode']) ? ($params['params']['KeyEpisode']) : '');
+                $idDetailAnime_ = (isset($params['params']['idDetailAnime']) ? ($params['params']['idDetailAnime']) : 0);
+                $idListAnime_ = (isset($params['params']['idListAnime']) ? ($params['params']['idListAnime']) : 0);
+                $idListEpisode_ = (isset($params['params']['idListEpisode']) ? ($params['params']['idListEpisode']) : 0);
             }
             $Users = MainModel::getUser($ApiKey);
             $Token = $Users[0]['token'];
@@ -55,7 +69,7 @@ class StreamAnimeController extends Controller
                                     $KeyPagiDecode = EnkripsiData::DecodePaginationEps($NextEpisode);
                                     $URL_Next = $KeyPagiDecode->href;
                                     $BASE_URL_LIST = $URL_Next;
-                                    return $this->StreamValue($BASE_URL_LIST,$BASE_URL,$awal);
+                                    return $this->StreamValue($BASE_URL_LIST,$BASE_URL,$awal,$idDetailAnime_,$idListAnime_,$idListEpisode_);
                                 }else{
                                     return ResponseConnected::InvalidKeyPagination("Stream Anime","Invalid Pagination", $awal);
                                 }
@@ -65,13 +79,13 @@ class StreamAnimeController extends Controller
                                     $KeyPagiDecode = EnkripsiData::DecodePaginationEps($PrevEpisode);
                                     $URL_PREV = $KeyPagiDecode->href;
                                     $BASE_URL_LIST = $URL_PREV;
-                                    return $this->StreamValue($BASE_URL_LIST,$BASE_URL,$awal);
+                                    return $this->StreamValue($BASE_URL_LIST,$BASE_URL,$awal,$idDetailAnime_,$idListAnime_,$idListEpisode_);
                                 }else{
                                     return ResponseConnected::InvalidKeyPagination("Stream Anime","Invalid Pagination", $awal);
                                 }
                             }else{
                                 $BASE_URL_LIST = $subHref;
-                                return $this->StreamValue($BASE_URL_LIST,$BASE_URL,$awal);
+                                return $this->StreamValue($BASE_URL_LIST,$BASE_URL,$awal,$idDetailAnime_,$idListAnime_,$idListEpisode_);
                             }
                         }else{
                             return ResponseConnected::InvalidKey("Stream Anime","Invalid Key", $awal);
@@ -90,7 +104,7 @@ class StreamAnimeController extends Controller
             }
         }
 
-        public function StreamValue($BASE_URL_LIST,$BASE_URL,$awal){
+        public function StreamValue($BASE_URL_LIST,$BASE_URL,$awal,$idDetailAnime_,$idListAnime_,$idListEpisode_){
             $client = new Client(['cookies' => new FileCookieJar('cookies.txt')]);
             $client->getConfig('handler')->push(CloudflareMiddleware::create());
             $goutteClient = new GoutteClient();
@@ -117,8 +131,11 @@ class StreamAnimeController extends Controller
                     } 
                     $ListDetail = $node->filter('.animeInfo > ul')->html();
                     $SubDetail01 = explode("<b", $ListDetail);
+                    $Title = substr($SubDetail01[1], strpos($SubDetail01[1], ":") + 1);
+                    $href =$node->filter('a')->attr('href');
+                
                     $SubDetail02 = array(
-                        "Title" => substr($SubDetail01[1], strpos($SubDetail01[1], ":") + 1),
+                        "Title" => $Title,
                         "JudulAlternatif" => substr($SubDetail01[2], strpos($SubDetail01[2], ":") + 1),
                         "Rating" => substr($SubDetail01[3], strpos($SubDetail01[3], ":") + 1),
                         "Votes" => substr($SubDetail01[4], strpos($SubDetail01[4], ":") + 1),
@@ -131,7 +148,6 @@ class StreamAnimeController extends Controller
                         return $ImgUrl;
                     });    
                     
-
                     $SubListDetail=array(
                         "subDetail" => $SubDetail02,
                         "synopsis" => $synopsis,
@@ -171,9 +187,8 @@ class StreamAnimeController extends Controller
                     {#List Property
                         $LinkNowEpisode=substr($BASE_URL_LIST, strrpos($BASE_URL_LIST, '-' )+1);
                         $NowEpisode=str_replace("/","",$LinkNowEpisode);
-                        
                         $Title = strtok($SubListDetail[0]['subDetail']['Title'],'<');
-                        $Title = trim($Title);
+                        $Title = trim($Title);                        
                         $GenreList = str_replace("</a>","| ",implode($SubListDetail[0]['genre']));
                         $GenreList = trim($GenreList);
                         $Synopsis = trim($SubListDetail[0]['synopsis']);
@@ -202,12 +217,16 @@ class StreamAnimeController extends Controller
                             $HrefSingleList= $BASE_URL_LIST;
                             $HrefNext = "";
                         }
+                        
                         $KeyListAnimEnc= array(
                             "Title"=>$Title,
                             "Image"=>"",
                             "href"=>$HrefSingleList
                         );
-
+                        
+                        $href = $HrefSingleList;
+                        
+                        $Title = Converter::__normalizeTitle($Title,$href);
                         $NextEpisode = EnkripsiData::encodePaginationEps($HrefNext);
                         $KeyListAnim = EnkripsiData::encodeKeyListAnime($KeyListAnimEnc); 
                         $PrevEpisode = EnkripsiData::encodePaginationEps($HrefPrev); 
@@ -229,45 +248,45 @@ class StreamAnimeController extends Controller
                             $codeListAnime['code'] = md5($cdListAnime);
                             $listAnime = MainModel::getDataListAnime($codeListAnime);
                             $idListAnime = (empty($listAnime)) ? 0 : $listAnime[0]['id'];
-
+                            
                             if(empty($listAnime)|| $idListAnime == 0){
-                                $KeyListAnimEnc= array(
-                                    "Title"=>trim($Title),
-                                    "Image"=>$imageUrl,
-                                    "Type"=>trim($Tipe),
-                                    "href"=>$BASE_URL_LIST
-                                );
-                                if(empty($listAnime)){
-                                    $KeyListAnim = EnkripsiData::encodeKeyListAnime($KeyListAnimEnc);
-                                    $Input = array(
-                                        'code' => md5(Str::slug($Title)),
-                                        'slug' => Str::slug($Title),
-                                        'title' => $Title,
-                                        'key_list_anime' => $KeyListAnim,
-                                        'name_index' => "#".substr(ucfirst($Title), 0, 1),
-                                        'cron_at' => Carbon::now()->format('Y-m-d H:i:s')
-                                    );
-                                    $save = MainModel::insertListAnimeMysql($Input);
-                                }else{
-                                    $conditions['id'] = $idListAnime;
-                                    $Update = array(
-                                        'code' => md5(Str::slug($Title)),
-                                        'slug' => Str::slug($Title),
-                                        'title' => $Title,
-                                        'key_list_anime' => $KeyListAnim,
-                                        'name_index' => "#".substr(ucfirst($Title), 0, 1),
-                                        'cron_at' => Carbon::now()->format('Y-m-d H:i:s')
-                                    );
-                                    $save = MainModel::updateListAnimeMysql($Update,$conditions);
-                                }
-                                $codeListAnime['code'] = md5(Str::slug($Title));
-                                $listAnime = MainModel::getDataListAnime($codeListAnime);
-                                $idListAnime = (empty($listAnime)) ? 0 : $listAnime[0]['id'];
+                                $idListAnime = $idListAnime_;
+                                // $KeyListAnimEnc= array(
+                                //     "Title"=>trim($Title),
+                                //     "Image"=>$imageUrl,
+                                //     "Type"=>trim($Tipe),
+                                //     "href"=>$BASE_URL_LIST
+                                // );
+                                // if(empty($listAnime)){
+                                //     $KeyListAnim = EnkripsiData::encodeKeyListAnime($KeyListAnimEnc);
+                                //     $Input = array(
+                                //         'code' => md5(Str::slug($Title)),
+                                //         'slug' => Str::slug($Title),
+                                //         'title' => $Title,
+                                //         'key_list_anime' => $KeyListAnim,
+                                //         'name_index' => "#".substr(ucfirst($Title), 0, 1),
+                                //         'cron_at' => Carbon::now()->format('Y-m-d H:i:s')
+                                //     );
+                                //     $save = MainModel::insertListAnimeMysql($Input);
+                                // }else{
+                                //     $conditions['id'] = $idListAnime;
+                                //     $Update = array(
+                                //         'code' => md5(Str::slug($Title)),
+                                //         'slug' => Str::slug($Title),
+                                //         'title' => $Title,
+                                //         'key_list_anime' => $KeyListAnim,
+                                //         'name_index' => "#".substr(ucfirst($Title), 0, 1),
+                                //         'cron_at' => Carbon::now()->format('Y-m-d H:i:s')
+                                //     );
+                                //     $save = MainModel::updateListAnimeMysql($Update,$conditions);
+                                // }
+                                // $codeListAnime['code'] = md5(Str::slug($Title));
+                                // $listAnime = MainModel::getDataListAnime($codeListAnime);
+                                // $idListAnime = (empty($listAnime)) ? 0 : $listAnime[0]['id'];
                             }
                         }#End List Anime
                         
-                        {#save to detail anime and list episode
-                            
+                        {# to detail anime and list episode
                             $codeListEps['code'] = md5($SlugEpisode);
                             $codeDetailAnime['code'] = md5($cdListAnime);
                             $SlugDetailAnime = $cdListAnime;
@@ -275,87 +294,23 @@ class StreamAnimeController extends Controller
                             $ListEpisodeAnime = MainModel::getDataListEpisodeAnime($codeListEps);
                             $idDetailAnime = (empty($DetailAnime)) ? 0 : $DetailAnime[0]['id'];
                             $idListEpisode = (empty($ListEpisodeAnime)) ? 0 : $ListEpisodeAnime[0]['id'];
+                            
                             if(empty($DetailAnime) || $idDetailAnime == 0 || $idListEpisode == 0 || empty($ListEpisodeAnime) ){
-                                $KeyListAnimEnc= array(
-                                    "Title"=>trim($Title),
-                                    "Image"=>"",
-                                    "Type"=>"",
-                                    "href"=>$hrefKeyListAnim[$i]
-                                );
-                                $KeyListAnim = EnkripsiData::encodeKeyListAnime($KeyListAnimEnc);
-                                $listDataAnime = [
-                                    'params' => [
-                                        'X-API-KEY' => env('X_API_KEY',''),
-                                        'KeyListAnim' => $KeyListAnim
-                                    ]
-                                ];
-                                $dataDetailAnime = $this->DetailListAnimeController->DetailListAnim(NULL,$listDataAnime);
-                                $codeDetailAnime['code'] = md5($cdListAnime);
+                                $idDetailAnime = $idDetailAnime_;
+                                $idListEpisode = $idListEpisode_;
+                                // $KeyListAnim = EnkripsiData::encodeKeyListAnime($KeyListAnimEnc);
+                                // $listDataAnime = [
+                                //     'params' => [
+                                //         'X-API-KEY' => env('X_API_KEY',''),
+                                //         'KeyListAnim' => $KeyListAnim
+                                //     ]
+                                // ];
+                                // $dataDetailAnime = $this->DetailListAnimeController->DetailListAnim(NULL,$listDataAnime);
+                                // $codeDetailAnime['code'] = md5($cdListAnime);
                                 
                             }
                             
-                            $codeListEps['code'] = md5($SlugEpisode);
-                            $codeDetailAnime['code'] = md5($cdListAnime);
-                            $SlugDetailAnime = $cdListAnime;
-                            $DetailAnime = MainModel::getDataDetailAnime($codeDetailAnime);
-                            $ListEpisodeAnime = MainModel::getDataListEpisodeAnime($codeListEps);
-                            $idDetailAnime = (empty($DetailAnime)) ? 0 : $DetailAnime[0]['id'];
-                            $idListEpisode = (empty($ListEpisodeAnime)) ? 0 : $ListEpisodeAnime[0]['id'];
-                        }#End #save to detail anime and list episode
-
-                        {#Save Last Update
-                            // $codeLastUpdate['code'] = md5($code);
-                            // $lastUpdate = MainModel::getDataLastUpdate($codeLastUpdate);
-                            // $idLastUpdate = (empty($lastUpdate)) ? 0 : $lastUpdate[0]['id'];
-                            // if(empty($lastUpdate) || $idLastUpdate == 0){
-                            //     $KeyEpisodeEnc=array(
-                            //         "href" => $BASE_URL_LIST,
-                            //         "Image" => $imageUrl,
-                            //         "Title" => $Title,
-                            //         "Status" => $Status,
-                            //         "Episode" => $NowEpisode
-                            //     );
-                            //     $KeyEpisode = self::encodeKeyListEpisode($KeyEpisodeEnc);
-                            //     if(empty($lastUpdate)){
-                            //         $Input = array(
-                            //             "image" => $imageUrl,
-                            //             "title" => $Title,
-                            //             "title_alias" => $Title,
-                            //             "status" => $Status,
-                            //             "episode" => $NowEpisode,
-                            //             "keyepisode" => $KeyEpisode,
-                            //             'total_search_page' => "",
-                            //             'page_search' => "",
-                            //             'slug' => $SlugEpisode,
-                            //             'id_list_anime' => $idListAnime,
-                            //             'code' => md5($code),
-                            //             'cron_at' => Carbon::now()->format('Y-m-d H:i:s')
-                            //         );
-                            //         $save = MainModel::insertLastUpdateMysql($Input);
-                            //     }else{
-                            //         $conditions['id'] = $idLastUpdate;
-                            //         $Update = array(
-                            //             "image" => $imageUrl,
-                            //             "title" => $Title,
-                            //             "title_alias" => $Title,
-                            //             "status" => $Status,
-                            //             "episode" => $NowEpisode,
-                            //             "keyepisode" => $KeyEpisode,
-                            //             'total_search_page' => "",
-                            //             'page_search' => "",
-                            //             'slug' => $SlugEpisode,
-                            //             'id_list_anime' => $idListAnime,
-                            //             'code' => md5($code),
-                            //             'cron_at' => Carbon::now()->format('Y-m-d H:i:s')
-                            //         );
-                            //         $save = MainModel::updateLastUpdateMysql($Update,$conditions);
-                            //     }
-                            //     $codeLastUpdate['code'] = md5($code);
-                            //     $lastUpdate = MainModel::getDataLastUpdate($codeLastUpdate);
-                            //     $idLastUpdate = (empty($lastUpdate)) ? 0 : $lastUpdate[0]['id'];
-                                
-                            // }
-                        }#End Last Update
+                        }#End # to detail anime and list episode
 
                         {#save to StreamAnime
                             $paramCheck['code'] = md5($code);
@@ -409,6 +364,7 @@ class StreamAnimeController extends Controller
         public static function saveServerStream($SubMirror,$checkExist,$Title){
             $ListServer = array();
             $idStreamAnime= $checkExist[0]['id'];
+            $LogSave = array();
             for($i=1;$i<count($SubMirror[0]);$i++){
                 $NameServer = trim($SubMirror[0][$i]['NameServer']);
                 $IframeSrc = ($SubMirror[0][$i]['IframeSrc']);

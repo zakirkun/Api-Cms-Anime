@@ -25,7 +25,7 @@ class CronStreamAnimeGenerateByID extends Command
      *
      * @var string
      */
-    protected $signature = 'CronStreamAnimeGenerateByID:CronStreamAnimeGenerateByIDV1 {ID_ListEp_Anime} ';
+    protected $signature = 'CronStreamAnimeGenerateByID:CronStreamAnimeGenerateByIDV1 {ID_ListEp_Anime_First} {ID_ListEp_Anime_End} {ID_ListEp_Anime}';
 
     /**
      * The console command description.
@@ -51,7 +51,9 @@ class CronStreamAnimeGenerateByID extends Command
      * @return mixed
      */
     public function handle(){
-        $IDListEpsAnime = explode(',',$this->argument('ID_ListEp_Anime'));
+        $IDListEpsAnimeFirst = ($this->argument('ID_ListEp_Anime_First'));
+        $IDListEpsAnimeEnd = ($this->argument('ID_ListEp_Anime_End')) ? $this->argument('ID_ListEp_Anime_End') : $IDListEpsAnimeFirst;
+        $IDListEpsAnime = ($this->argument('ID_ListEp_Anime')) ? explode(',',$this->argument('ID_ListEp_Anime')) : False ;
         // $showLog = filter_var($this->argument('show_log'), FILTER_VALIDATE_BOOLEAN);
         $path_log = base_path('storage/logs/generate/mysql');
         $filename = $path_log.'/CronStreamAnimeGenerateByIDV1.json';
@@ -62,33 +64,71 @@ class CronStreamAnimeGenerateByID extends Command
         $status = "Complete";
         $i = 0;
         $dataNotSave = array();
-        $TotalHit = (count($IDListEpsAnime));
-        for($j = 0; $j < count($IDListEpsAnime); $j++){
-            $param = [
-                'id' => $IDListEpsAnime[$j],
-            ];
-            $listEpsAnime = MainModel::getDataListEpisodeAnime($param);
-            foreach($listEpsAnime as $listEpsAnime){
-                $StreamAnime = [
-                    'params' => [
-                        'X-API-KEY' => env('X_API_KEY',''),
-                        'KeyEpisode' => $listEpsAnime['key_episode']
-                    ]
+        $TotalHit = 0;
+        
+        if($IDListEpsAnime){
+            for($j = 0 ;$j <count($IDListEpsAnime) ;$j++ ){
+                $param = [
+                    'id' => $IDListEpsAnime[$j],
                 ];
-                try{
-                    $data = $this->StreamAnimeController->StreamAnime(NULL,$StreamAnime);
-                    echo json_encode($data)."\n\n";
-                    $i++;
-                }catch(\Exception $e){
-                    $dataNotSave[] = array(
-                        'Episode' => $listEpsAnime['episode'],
-                        'KeyEpisode' => $listEpsAnime['key_episode'],
-                        'id' => $listEpsAnime['id']
-                    );
-                    $status = 'Not Complete';
+                $listEpsAnime = MainModel::getDataListEpisodeAnime($param);
+                foreach($listEpsAnime as $listEpsAnime){
+                    $StreamAnime = [
+                        'params' => [
+                            'X-API-KEY' => env('X_API_KEY',''),
+                            'KeyEpisode' => $listEpsAnime['key_episode'],
+                            'idDetailAnime' => $listEpsAnime['id_detail_anime'],
+                            'idListAnime' => $listEpsAnime['id_list_anime'],
+                            'idListEpisode' => $listEpsAnime['id']
+                        ]
+                    ];
+                    try{
+                        $data = $this->StreamAnimeController->StreamAnime(NULL,$StreamAnime);
+                        echo json_encode($data)."\n\n";
+                        $i++;
+                    }catch(\Exception $e){
+                        $dataNotSave[] = array(
+                            'Episode' => $listEpsAnime['episode'],
+                            'KeyEpisode' => $listEpsAnime['key_episode'],
+                            'id' => $listEpsAnime['id']
+                        );
+                        $status = 'Not Complete';
+                    }
+                }
+            }
+        }else{
+            for($j = $IDListEpsAnimeFirst; $j <= $IDListEpsAnimeEnd ; $j++){
+                $param = [
+                    'id' => $j,
+                ];
+                $listEpsAnime = MainModel::getDataListEpisodeAnime($param);
+                foreach($listEpsAnime as $listEpsAnime){
+                    $StreamAnime = [
+                        'params' => [
+                            'X-API-KEY' => env('X_API_KEY',''),
+                            'KeyEpisode' => $listEpsAnime['key_episode'],
+                            'idDetailAnime' => $listEpsAnime['id_detail_anime'],
+                            'idListAnime' => $listEpsAnime['id_list_anime'],
+                            'idListEpisode' => $listEpsAnime['id']
+                        ]
+                    ];
+                    
+                    try{
+                        $data = $this->StreamAnimeController->StreamAnime(NULL,$StreamAnime);
+                        echo json_encode($data)."\n\n";
+                        $i++;
+                    }catch(\Exception $e){
+                        $dataNotSave[] = array(
+                            'Episode' => $listEpsAnime['episode'],
+                            'KeyEpisode' => $listEpsAnime['key_episode'],
+                            'id' => $listEpsAnime['id']
+                        );
+                        $status = 'Not Complete';
+                    }
                 }
             }
         }
+        
         $notSave = $TotalHit - $i;
         
         $response['Total_hit'] = $TotalHit;

@@ -34,14 +34,14 @@ class GenreListAnimeController extends Controller
         $Users = MainModel::getUser($ApiKey);
         $Token = $Users[0]['token'];
         if($Token){
-            try{
+            // try{
                 $ConfigController = new ConfigController();
                 $BASE_URL_LIST=$ConfigController->BASE_URL_ANIME_1."/archive/genre/";
                 $BASE_URL=$ConfigController->BASE_URL_ANIME_1;
                 return $this->GenreListAnimValue($BASE_URL_LIST,$BASE_URL,$awal);
-            }catch(\Exception $e){
-                return ResponseConnected::InternalServerError("Genre Anime","Internal Server Error",$awal);
-            }
+            // }catch(\Exception $e){
+            //     return ResponseConnected::InternalServerError("Genre Anime","Internal Server Error",$awal);
+            // }
             
         }else{
             return ResponseConnected::InvalidToken("Genre Anime","Invalid Token", $awal);

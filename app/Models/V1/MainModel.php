@@ -158,6 +158,60 @@ class MainModel extends Model
 
     }
     #================ End getDataListAnime ==================================
+    /**
+     * @author [Prayugo]
+     * @create date 2020-01-12 21:28:51
+     * @desc function getDataListAnimeJoin
+     */
+    #================  getDataListAnimeJoin ==================================
+    static function getDataListAnimeJoin($params = []){
+        $ID = (isset($params['id']) ? $params['id'] : '');
+        $code = (isset($params['code']) ? $params['code'] : '');
+        $Title = (isset($params['title']) ? $params['title'] : '');
+        $Slug = (isset($params['slug']) ? $params['slug'] : '');
+        $startByIndex = (isset($params['start_by_index']) ? $params['start_by_index'] : '');
+        $EndByIndex = (isset($params['end_by_index']) ? $params['end_by_index'] : '');
+        $startDate = (isset($params['start_date']) ? $params['start_date'] : '');
+        $endDate = (isset($params['end_date']) ? $params['end_date'] : '');
+        $isUpdated = (isset($params['is_updated']) ? $params['is_updated'] : FALSE); #untuk data terbaru 2 jam terakhir
+
+        $tabel_list_anime = 'list_anime as ';
+        ini_set('memory_limit','1024M');
+        $query = DB::connection('application_db')
+            ->table('list_anime as LA')
+            ->select([
+                'LA.id', 'LA.code', 'LA.slug', 'LA.title', 'LA.name_index','LA.cron_at',
+                'DA.image', 'DA.status', 'DA.id as id_detail_anime', 'DA.rating', 'DA.genre'
+            ])
+            ->leftJoin('detail_anime AS DA', 'LA.id', '=', 'DA.id_list_anime');
+        
+        if(!empty($ID)) $query = $query->where('LA.id', '=', $ID);    
+        if(!empty($Slug)) $query = $query->where('LA.slug', '=', $Slug);    
+        if(!empty($code)) $query = $query->where('LA.code', '=', $code);
+        if(!empty($Title)) $query = $query->where('LA.title', 'Like', "%".$Title);
+        if(!empty($startByIndex)) $query = $query->where('LA.name_index', 'Like', "%".$startByIndex);
+        if(!empty($EndByIndex)){
+            $alphas = range($startByIndex, $EndByIndex);
+            for($i = 0;$i < count($alphas); $i++){
+                $query = $query->orWhere('LA.name_index', 'Like', "%".$alphas[$i]);  
+            }
+        }
+        if($isUpdated){ #ambil data update atau terbaru
+            $startDate = Carbon::parse($startDate)->timestamp;
+            $endDate = Carbon::parse($endDate)->timestamp;
+            $query = $query->whereBetween('LA.cron_at', [$startDate, $endDate]);
+        }else{
+            if(!empty($startDate) && empty($endDate)) $query = $query->where('LA.cron_at', '>=', $startDate);
+            if($startDate && $endDate) $query = $query->whereBetween('LA.cron_at', [$startDate, $endDate]);
+        }
+        $query = $query->get();
+
+        $result = [];
+        if(count($query)) $result = collect($query)->map(function($x){ return (array) $x; })->toArray();
+        return $result;
+
+    }
+    #================ End getDataListAnimeJoin ==================================
 
     /**
      * @author [Prayugo]
