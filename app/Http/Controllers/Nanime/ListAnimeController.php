@@ -292,22 +292,13 @@ class ListAnimeController extends Controller
 
                 #show log response
                 if($showLog){
-                    $slug = substr($MappingMongo['slug'], 0, 20);
+                    $slug = $MappingMongo['slug'];
                     $prefixDate = Carbon::parse($MappingMongo['cron_at'])->format('Y-m-d H:i:s');
                     if($isUpdated == TRUE) $prefixDate = Carbon::parse($MappingMongo['cron_at'])->format('Y-m-d H:i:s');
                     echo $message.' | '.$prefixDate.' | '.$MappingMongo['id_auto'] .' => '.$slug.' | '.$messageLocal."\n";
 
                 }
-                #set last_date
-                if(!is_null($params) && $lastDate == TRUE && $key == 0){
-                    if($isUpdated == TRUE){ #jika date_modify
-                        $setLastDate = $MappingMongo['cron_at'];
-
-                    }else{ #jika date_publish
-                        $setLastDate = $MappingMongo['cron_at'];
-
-                    }
-                }
+                
             }
             
         }else{

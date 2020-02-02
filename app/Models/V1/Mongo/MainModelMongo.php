@@ -18,6 +18,7 @@ use App\Models\V1\Mongo\CollectionDetailAnimeModel;
 use App\Models\V1\Mongo\CollectionLastUpdateModel;
 use App\Models\V1\Mongo\CollectionStreamAnimeModel;
 use App\Models\V1\Mongo\CollectionTrendingWeekModel;
+use App\Models\V1\Mongo\CollectionGenreListModel;
 
 
 class MainModelMongo extends Model
@@ -134,7 +135,7 @@ class MainModelMongo extends Model
     // ====================================== updateLastUpdateAnime ======================================================================
     static function updateLastUpdateAnime($data = [], $collections = NULL, $conditions = [], $upsert = TRUE, $database_name = 'mongodb'){
         if($upsert == TRUE){ #USE UPSERT
-            $query = CollectionListAnimeModel::on($database_name)->raw(function($collection) use ($conditions, $data)
+            $query = CollectionLastUpdateModel::on($database_name)->raw(function($collection) use ($conditions, $data)
             {
                 return $collection->updateOne(
                 $conditions,
@@ -158,7 +159,7 @@ class MainModelMongo extends Model
                 $result['message_local'] = 'Gagal Update';
             }
         }else{
-            $query = CollectionListAnimeModel::on($database_name)->raw()->updateOne(
+            $query = CollectionLastUpdateModel::on($database_name)->raw()->updateOne(
                 $conditions,
                 ['$set' => $data],
                 ['w' => 'majority']
@@ -333,6 +334,64 @@ class MainModelMongo extends Model
             }
         }else{
             $query = CollectionTrendingWeekModel::on($database_name)->raw()->updateOne(
+                $conditions,
+                ['$set' => $data],
+                ['w' => 'majority']
+            );
+
+            if($query->isAcknowledged() == TRUE){
+                if($query->getModifiedCount() > 0){
+                    $result['status'] = 200;
+                    $result['message'] = 'Berhasil Update';
+                    $result['message_local'] = 'Berhasil Update';
+                }else{
+                    $result['status'] = 200;
+                    $result['message'] = 'Gagal Update';
+                    $result['message_local'] = 'Match 1, Update 0';
+                }
+            }else{
+                $result['status'] = 400;
+                $result['message'] = 'Gagal Update';
+                $result['message_local'] = 'Gagal Update';
+            }
+        }
+        return $result;
+    }
+    // ====================================== End updateTrendingWeekAnime ======================================================================
+
+    /**
+     * @author [prayugo]
+     * @create date 2020-01-25 22:46:47
+     * @desc [updateGenreListAnime]
+     */
+    // ====================================== updateGenreListAnime ======================================================================
+    static function updateGenreListAnime($data = [], $collections = NULL, $conditions = [], $upsert = TRUE, $database_name = 'mongodb'){
+        if($upsert == TRUE){ #USE UPSERT
+            $query = CollectionGenreListModel::on($database_name)->raw(function($collection) use ($conditions, $data)
+            {
+                return $collection->updateOne(
+                $conditions,
+                ['$set' => $data],
+                ['upsert' => true]);
+            });
+
+            if($query->isAcknowledged() == TRUE){
+                if($query->getModifiedCount() > 0 || $query->getUpsertedCount() > 0){
+                    $result['status'] = 200;
+                    $result['message'] = 'Berhasil Update';
+                    $result['message_local'] = 'Berhasil Update';
+                }else{
+                    $result['status'] = 200;
+                    $result['message'] = 'Gagal Update';
+                    $result['message_local'] = 'Match 1, Update 0';
+                }
+            }else{
+                $result['status'] = 400;
+                $result['message'] = 'Gagal Update';
+                $result['message_local'] = 'Gagal Update';
+            }
+        }else{
+            $query = CollectionGenreListModel::on($database_name)->raw()->updateOne(
                 $conditions,
                 ['$set' => $data],
                 ['w' => 'majority']

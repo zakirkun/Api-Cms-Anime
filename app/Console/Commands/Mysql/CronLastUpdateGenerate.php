@@ -72,7 +72,7 @@ class CronLastUpdateGenerate extends Command
             ];
             $dataLastUpdate = MainModel::getDataLastUpdate($param);
             $TotalHit = $dataLastUpdate[0]['total_search_page'];
-            for($i = 1; $i <= $TotalHit; $i++ ){
+            for($i = $TotalHit; $i >= 1; $i--){
                 $lastUpdate = [
                     'params' => [
                         'X-API-KEY' => env('X_API_KEY',''),
@@ -90,11 +90,9 @@ class CronLastUpdateGenerate extends Command
                     $status = 'Not Complete';
                     $notSaveHit++;
                 }
-                
             }
             $TotDataSave = ($i - $notSaveHit);
         }else{
-            
             for($i = $pageNumberFirst ; $i <= $pageNumberEnd ;$i++){
                 $lastUpdate = [
                     'params' => [

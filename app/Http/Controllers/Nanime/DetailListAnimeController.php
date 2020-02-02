@@ -11,7 +11,10 @@ use \GuzzleHttp\Cookie\FileCookieJar;
 use \GuzzleHttp\Psr7;
 use \Carbon\Carbon;
 use \Sunra\PhpSimple\HtmlDomParser;
+use \App\User;
 use Illuminate\Support\Str;
+
+use Config;
 
 #Load Helper V1
 use App\Helpers\V1\Converter as Converter;
@@ -20,11 +23,20 @@ use App\Helpers\V1\EnkripsiData as EnkripsiData;
 
 #Load Models V1
 use App\Models\V1\MainModel as MainModel;
+use App\Models\V1\Mongo\MainModelMongo as MainModelMongo;
 
 // done
 class DetailListAnimeController extends Controller
 {
-    // KeyListAnim
+    function __construct(){
+        $this->mongo = Config::get('mongo');
+    }
+    /**
+     * @author [prayugo]
+     * @create date 2020-01-26 18:19:09
+     * @desc [DetailListAnime]
+     */
+    // ================================== DetailListAnime Save to Mysql =========================
     public function DetailListAnim(Request $request = NULL, $params = NULL){
         $awal = microtime(true);
         if(!empty($request) || $request != NULL){
@@ -369,6 +381,134 @@ class DetailListAnimeController extends Controller
         }
         return $LogSave;
     }
+    // ================================== End DetailListAnime Save to Mysql =========================
+
+    /**
+     * @author [prayugo]
+     * @create date 2020-01-26 18:19:09
+     * @desc [generateDetailAnime]
+     */
+    // ================================== generateDetailAnime Save to Mongo =========================
+    public function generateDetailAnime(Request $request = NULL, $params = NULL){
+
+        $param = $params; # get param dari populartopiclist atau dari cron
+        if(is_null($params)) $param = $request->all();
+        
+        $id = (isset($param['params']['id']) ? $param['params']['id'] : NULL);
+        $idListAnime = (isset($param['params']['id_list_anime']) ? $param['params']['id_list_anime'] : NULL);
+        $code = (isset($param['params']['code']) ? $param['params']['code'] : '');
+        $slug = (isset($param['params']['slug']) ? $param['params']['slug'] : '');
+        $title = (isset($param['params']['title']) ? $param['params']['title'] : '');
+        $startDate = (isset($param['params']['start_date']) ? $param['params']['start_date'] : NULL);
+        $endDate = (isset($param['params']['end_date']) ? $param['params']['end_date'] : NULL);
+        $isUpdated = (isset($param['params']['is_updated']) ? filter_var($param['params']['is_updated'], FILTER_VALIDATE_BOOLEAN) : FALSE);
+        
+        #jika pakai range date
+        $showLog = (isset($param['params']['show_log']) ? $param['params']['show_log'] : FALSE);
+        $parameter = [
+            'id' => $id,
+            'id_list_anime' => $idListAnime,
+            'code' => $code,
+            'slug' => $slug,
+            'title' => $title,
+            'start_date' => $startDate,
+            'end_date' => $endDate,
+            'is_updated' => $isUpdated
+        ];
+        $detailAnime = MainModel::getDataDetailAnime($parameter);
+        
+        $errorCount = 0;
+        $successCount = 0;
+        if(count($detailAnime)){
+            foreach($detailAnime as $detailAnime){
+                $conditions = [
+                    'id_auto' => $detailAnime['id'].'-detailAnime',
+                ];
+                $param = [
+                    'id_detail_anime' => $detailAnime['id']
+                ];
+                $ListEpisode = MainModel::getDataListEpisodeJoin($param);
+                $dataEps = array();
+                foreach($ListEpisode as $ListEpisode){
+                    $dataEps[] = array(
+                        'id_episode' => $ListEpisode['id_list_episode'],
+                        'id_stream_anime' => $ListEpisode['id_stream_anime'],
+                        'slug' => $ListEpisode['slug'],
+                        'episode' => $ListEpisode['episode']
+                    );
+                }
+                 
+                $MappingMongo = array(
+                    'id_auto' => $detailAnime['id'].'-detailAnime',
+                    'id_list_anime' => $detailAnime['id_list_anime'],
+                    'id_detail_anime' => $detailAnime['id'],
+                    'source_type' => 'detail-Anime',
+                    'code' => $detailAnime['code'],
+                    'title' => Converter::__normalizeSummary($detailAnime['title']),
+                    'slug' => $detailAnime['slug'],
+                    'synopsis' => $detailAnime['synopsis'],
+                    'episode' => $dataEps,
+                    'image' => $detailAnime['image'],
+                    'status' => $detailAnime['status'],
+                    'rating' => $detailAnime['rating'],
+                    'genre' => explode('|',substr(trim($detailAnime['genre']),0,-1)),
+                    'keyword' => explode('-',$detailAnime['slug']),
+                    'meta_title' => (Converter::__normalizeSummary(strtolower($detailAnime['title']))),
+                    'meta_keywords' => explode('-',$detailAnime['slug']),
+                    'meta_tags' => explode('-',$detailAnime['slug']),
+                    'cron_at' => $detailAnime['cron_at']
+                );
+                $updateMongo = MainModelMongo::updateDetailListAnime($MappingMongo, $this->mongo['collections_detail_anime'], $conditions, TRUE);
+                
+                $status = 400;
+                $message = '';
+                $messageLocal = '';
+                if($updateMongo['status'] == 200){
+                    $status = 200;
+                    $message = 'success';
+                    $messageLocal = $updateMongo['message_local'];
+                    $successCount++;
+
+                }else{
+                    #jika dari cron dan pakai last_date atau pakai generate error
+                    #set error id generate
+                    if( (!is_null($params) && $endDate == TRUE) || (!is_null($params) && !empty($ids)) ){
+                        $error_id['response']['id'][$key] = $detailAnime['id']; #set id error generate
+                    }
+
+                    $status = 400;
+                    $message = 'error';
+                    $messageLocal = serialize($updateMongo['message_local']);
+                    $errorCount++;
+                }
+
+                #show log response
+                if($showLog){
+                    $slug = $MappingMongo['slug'];
+                    $prefixDate = Carbon::parse($MappingMongo['cron_at'])->format('Y-m-d H:i:s');
+                    if($isUpdated == TRUE) $prefixDate = Carbon::parse($MappingMongo['cron_at'])->format('Y-m-d H:i:s');
+                    echo $message.' | '.$prefixDate.' | '.$MappingMongo['id_auto'] .' => '.$slug.' | '.$messageLocal."\n";
+
+                }
+                
+            }
+            
+        }else{
+            $status = 400;
+            $message = 'data tidak ditemukan';
+        }
+
+        $response['error'] = $errorCount;
+        $response['success'] = $successCount;
+
+        if(!is_null($params)){ # untuk cron
+            return $response;
+        }else{
+            return (new Response($response, 200))
+                ->header('Content-Type', 'application/json');
+        }
+    }
+    // ================================== End generateDetailAnime Save to Mysql =========================
 
 
     

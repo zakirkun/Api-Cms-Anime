@@ -102,15 +102,36 @@ class MainModel extends Model
      */
     #================  getDataLastUpdate ==================================
     static function getDataLastUpdate($params = []){
+        $ID = (isset($params['id']) ? $params['id'] : '');
         $code = (isset($params['code']) ? $params['code'] : '');
+        $Title = (isset($params['title']) ? $params['title'] : '');
+        $Slug = (isset($params['slug']) ? $params['slug'] : '');
+        
+        $startDate = (isset($params['start_date']) ? $params['start_date'] : '');
+        $endDate = (isset($params['end_date']) ? $params['end_date'] : '');
+        $isUpdated = (isset($params['is_updated']) ? $params['is_updated'] : FALSE); #untuk data terbaru 2 jam terakhir
         $lastDate = (isset($params['last_date']) ? filter_var($params['last_date'], FILTER_VALIDATE_BOOLEAN) : FALSE);
+
         $tabel_name = 'last_update';
         ini_set('memory_limit','1024M');
         $query = DB::connection('application_db')
             ->table($tabel_name);
         
-        if(!empty($code)) $query = $query->where('code', '=', $code);
         if($lastDate) $query = $query->orderBy('cron_at', 'DESC');
+        if(!empty($ID)) $query = $query->where('id', '=', $ID);    
+        if(!empty($Slug)) $query = $query->where('slug', '=', $Slug);    
+        if(!empty($code)) $query = $query->where('code', '=', $code);
+        if(!empty($Title)) $query = $query->where('title', 'Like', "%".$Title);
+
+        if($isUpdated){ #ambil data update atau terbaru
+            $startDate = Carbon::parse($startDate)->timestamp;
+            $endDate = Carbon::parse($endDate)->timestamp;
+            $query = $query->whereBetween('cron_at', [$startDate, $endDate]);
+        }else{
+            if(!empty($startDate) && empty($endDate)) $query = $query->where('cron_at', '>=', $startDate);
+            if($startDate && $endDate) $query = $query->whereBetween('cron_at', [$startDate, $endDate]);
+        }
+
         $query = $query->get();
 
         $result = [];
@@ -279,13 +300,35 @@ class MainModel extends Model
      */
     #================  getDataListGenre ==================================
     public static function getDataListGenre($params = []){
+        $ID = (isset($params['id']) ? $params['id'] : '');
         $code = (isset($params['code']) ? $params['code'] : '');
+        $genre = (isset($params['genre']) ? $params['genre'] : '');
+        $Slug = (isset($params['slug']) ? $params['slug'] : '');
+        $startByIndex = (isset($params['start_by_index']) ? $params['start_by_index'] : '');
+        $EndByIndex = (isset($params['end_by_index']) ? $params['end_by_index'] : '');
+        $isUpdated = (isset($params['is_updated']) ? $params['is_updated'] : FALSE); #untuk data terbaru 2 jam terakhir
+
         $tabel_name = 'genre_list';
         ini_set('memory_limit','1024M');
         $query = DB::connection('application_db')
             ->table($tabel_name);
         
         if(!empty($code)) $query = $query->where('code', '=', $code);
+        if(!empty($ID)) $query = $query->where('id', '=', $ID);    
+        if(!empty($Slug)) $query = $query->where('slug', '=', $Slug);    
+        if(!empty($genre)) $query = $query->where('genre', 'Like', "%".$genre);
+        if(!empty($startByIndex)) $query = $query->where('name_index', 'Like', "%".$startByIndex);
+        if(!empty($EndByIndex)){
+            $alphas = range($startByIndex, $EndByIndex);
+            for($i = 0;$i < count($alphas); $i++){
+                $query = $query->orWhere('name_index', 'Like', "%".$alphas[$i]);  
+            }
+        }
+        if($isUpdated){ #ambil data update atau terbaru
+            $startDate = Carbon::parse($startDate)->timestamp;
+            $endDate = Carbon::parse($endDate)->timestamp;
+            $query = $query->whereBetween('cron_at', [$startDate, $endDate]);
+        }
         $query = $query->get();
 
         $result = [];
@@ -360,13 +403,32 @@ class MainModel extends Model
      */
     #================  getDataTrendingWeek ==================================
     public static function getDataTrendingWeek($params = []){
+        $ID = (isset($params['id']) ? $params['id'] : '');
         $code = (isset($params['code']) ? $params['code'] : '');
+        $Title = (isset($params['title']) ? $params['title'] : '');
+        $Slug = (isset($params['slug']) ? $params['slug'] : '');
+        $startDate = (isset($params['start_date']) ? $params['start_date'] : '');
+        $endDate = (isset($params['end_date']) ? $params['end_date'] : '');
+        $isUpdated = (isset($params['is_updated']) ? $params['is_updated'] : FALSE); #untuk data terbaru 2 jam terakhir
+        
         $tabel_name = 'trending_week';
         ini_set('memory_limit','1024M');
         $query = DB::connection('application_db')
             ->table($tabel_name);
         
         if(!empty($code)) $query = $query->where('code', '=', $code);
+        if(!empty($ID)) $query = $query->where('id', '=', $ID);    
+        if(!empty($Slug)) $query = $query->where('slug', '=', $Slug);    
+        if(!empty($Title)) $query = $query->where('title', 'Like', "%".$Title);
+
+        if($isUpdated){ #ambil data update atau terbaru
+            $startDate = Carbon::parse($startDate)->timestamp;
+            $endDate = Carbon::parse($endDate)->timestamp;
+            $query = $query->whereBetween('cron_at', [$startDate, $endDate]);
+        }else{
+            if(!empty($startDate) && empty($endDate)) $query = $query->where('cron_at', '>=', $startDate);
+            if($startDate && $endDate) $query = $query->whereBetween('cron_at', [$startDate, $endDate]);
+        }
         $query = $query->get();
 
         $result = [];
@@ -522,13 +584,34 @@ class MainModel extends Model
      */
     #================  getDataDetailAnime ==================================
     public static function getDataDetailAnime($params = []){
+        $ID = (isset($params['id']) ? $params['id'] : '');
+        $idListAnime = (isset($params['id_list_anime']) ? $params['id_list_anime'] : '');
         $code = (isset($params['code']) ? $params['code'] : '');
+        $Title = (isset($params['title']) ? $params['title'] : '');
+        $Slug = (isset($params['slug']) ? $params['slug'] : '');
+        $startDate = (isset($params['start_date']) ? $params['start_date'] : '');
+        $endDate = (isset($params['end_date']) ? $params['end_date'] : '');
+        $isUpdated = (isset($params['is_updated']) ? $params['is_updated'] : FALSE); #untuk data terbaru 2 jam terakhir
+
         $tabel_name = 'detail_anime';
         ini_set('memory_limit','1024M');
         $query = DB::connection('application_db')
             ->table($tabel_name);
         
+        if(!empty($ID)) $query = $query->where('id', '=', $ID);    
+        if(!empty($idListAnime)) $query = $query->where('id_list_anime', '=', $idListAnime);    
+        if(!empty($Slug)) $query = $query->where('slug', '=', $Slug);    
         if(!empty($code)) $query = $query->where('code', '=', $code);
+        if(!empty($Title)) $query = $query->where('title', 'Like', "%".$Title);
+        
+        if($isUpdated){ #ambil data update atau terbaru
+            $startDate = Carbon::parse($startDate)->timestamp;
+            $endDate = Carbon::parse($endDate)->timestamp;
+            $query = $query->whereBetween('cron_at', [$startDate, $endDate]);
+        }else{
+            if(!empty($startDate) && empty($endDate)) $query = $query->where('cron_at', '>=', $startDate);
+            if($startDate && $endDate) $query = $query->whereBetween('cron_at', [$startDate, $endDate]);
+        }
         $query = $query->get();
 
         $result = [];
@@ -605,6 +688,7 @@ class MainModel extends Model
     public static function getDataListEpisodeAnime($params = []){
         $code = (isset($params['code']) ? $params['code'] : '');
         $id = (isset($params['id']) ? $params['id'] : '');
+        $id_detail_anime = (isset($params['id_detail_anime']) ? $params['id_detail_anime'] : '');
         $startDate = (isset($params['start_date']) ? $params['start_date'] : '');
         $endDate = (isset($params['end_date']) ? $params['end_date'] : '');
         
@@ -615,6 +699,7 @@ class MainModel extends Model
         
         if(!empty($code)) $query = $query->where('code', '=', $code);
         if(!empty($id)) $query = $query->where('id', '=', $id);
+        if(!empty($id_detail_anime)) $query = $query->where('id_detail_anime', '=', $id_detail_anime);
 
         if(!empty($startDate) && empty($endDate)) $query = $query->where('cron_at', '>=', $startDate);
         if($startDate && $endDate) $query = $query->whereBetween('cron_at', [$startDate, $endDate]);
@@ -625,6 +710,50 @@ class MainModel extends Model
         return $result;
     }
     #================ End getDataListEpisodeAnime ==================================
+
+    public static function getDataListEpisodeJoin($params = []){
+        $ID = (isset($params['id']) ? $params['id'] : '');
+        $id_detail_anime = (isset($params['id_detail_anime']) ? $params['id_detail_anime'] : '');
+        $code = (isset($params['code']) ? $params['code'] : '');
+        $episode = (isset($params['episode']) ? $params['episode'] : '');
+        $Slug = (isset($params['slug']) ? $params['slug'] : '');
+        $startByIndex = (isset($params['start_by_index']) ? $params['start_by_index'] : '');
+        $EndByIndex = (isset($params['end_by_index']) ? $params['end_by_index'] : '');
+        $startDate = (isset($params['start_date']) ? $params['start_date'] : '');
+        $endDate = (isset($params['end_date']) ? $params['end_date'] : '');
+        $isUpdated = (isset($params['is_updated']) ? $params['is_updated'] : FALSE); #untuk data terbaru 2 jam terakhir
+
+        $tabel_list_anime = 'list_anime as ';
+        ini_set('memory_limit','1024M');
+        $query = DB::connection('application_db')
+            ->table('list_episode as LE')
+            ->select([
+                'LE.id as id_list_episode', 'LE.id_detail_anime', 'LE.slug', 'LE.episode',
+                'SA.id as id_stream_anime', 'SA.title'
+            ])
+            ->leftJoin('stream_anime AS SA', 'LE.id', '=', 'SA.id_list_episode');
+        
+        if(!empty($ID)) $query = $query->where('LE.id', '=', $ID);    
+        if(!empty($id_detail_anime)) $query = $query->where('LE.id_detail_anime', '=', $id_detail_anime);    
+        if(!empty($Slug)) $query = $query->where('LE.slug', '=', $Slug);    
+        if(!empty($code)) $query = $query->where('LE.code', '=', $code);
+        if(!empty($episode)) $query = $query->where('LE.episode', 'Like', "%".$episode);
+        
+
+        if($isUpdated){ #ambil data update atau terbaru
+            $startDate = Carbon::parse($startDate)->timestamp;
+            $endDate = Carbon::parse($endDate)->timestamp;
+            $query = $query->whereBetween('LA.cron_at', [$startDate, $endDate]);
+        }else{
+            if(!empty($startDate) && empty($endDate)) $query = $query->where('LA.cron_at', '>=', $startDate);
+            if($startDate && $endDate) $query = $query->whereBetween('LA.cron_at', [$startDate, $endDate]);
+        }
+        $query = $query->get();
+
+        $result = [];
+        if(count($query)) $result = collect($query)->map(function($x){ return (array) $x; })->toArray();
+        return $result;
+    }
     
     /**
      * @author [Prayugo]
@@ -693,12 +822,38 @@ class MainModel extends Model
     #================  getStreamAnime ==================================
     public static function getStreamAnime($params = []){
         $code = (isset($params['code']) ? $params['code'] : '');
+        $ID = (isset($params['id']) ? $params['id'] : '');
+        $idListEpisode = (isset($params['id_list_episode']) ? $params['id_list_episode'] : '');
+        $idDetailAnime = (isset($params['id_detail_anime']) ? $params['id_detail_anime'] : '');
+        $idListAnime = (isset($params['id_list_anime']) ? $params['id_list_anime'] : '');
+        $code = (isset($params['code']) ? $params['code'] : '');
+        $episode = (isset($params['title']) ? $params['title'] : '');
+        $Slug = (isset($params['slug']) ? $params['slug'] : '');
+        $title = (isset($params['title']) ? $params['title'] : '');
+        $startDate = (isset($params['start_date']) ? $params['start_date'] : '');
+        $endDate = (isset($params['end_date']) ? $params['end_date'] : '');
+        $isUpdated = (isset($params['is_updated']) ? $params['is_updated'] : FALSE); #untuk data terbaru 2 jam terakhir
+
         $tabel_name = 'stream_anime';
         ini_set('memory_limit','1024M');
         $query = DB::connection('application_db')
             ->table($tabel_name);
         
         if(!empty($code)) $query = $query->where('code', '=', $code);
+        if(!empty($ID)) $query = $query->where('id', '=', $ID);
+        if(!empty($idListEpisode)) $query = $query->where('id_list_episode', '=', $idListEpisode);
+        if(!empty($idDetailAnime)) $query = $query->where('iid_detail_animed', '=', $idDetailAnime);
+        if(!empty($idListEpisode)) $query = $query->where('id_list_anime', '=', $idListEpisode);
+        if(!empty($Slug)) $query = $query->where('slug', '=', $Slug);    
+        if(!empty($episode)) $query = $query->where('title', 'Like', "%".$episode);
+        if($isUpdated){ #ambil data update atau terbaru
+            $startDate = Carbon::parse($startDate)->timestamp;
+            $endDate = Carbon::parse($endDate)->timestamp;
+            $query = $query->whereBetween('cron_at', [$startDate, $endDate]);
+        }else{
+            if(!empty($startDate) && empty($endDate)) $query = $query->where('cron_at', '>=', $startDate);
+            if($startDate && $endDate) $query = $query->whereBetween('cron_at', [$startDate, $endDate]);
+        }
         $query = $query->get();
 
         $result = [];
@@ -706,6 +861,62 @@ class MainModel extends Model
         return $result;
     }
     #================ End getStreamAnime ==================================
+
+    /**
+     * @author [Prayugo]
+     * @create date 2019-12-16 02:28:51
+     * @modify date 2019-12-16 02:28:51
+     * @desc function getStreamAnimeJoin
+     */
+    #================  getStreamAnimeJoin ==================================
+    public static function getStreamAnimeJoin($params = []){
+        $code = (isset($params['code']) ? $params['code'] : '');
+        $ID = (isset($params['id']) ? $params['id'] : '');
+        $idListEpisode = (isset($params['id_list_episode']) ? $params['id_list_episode'] : '');
+        $idDetailAnime = (isset($params['id_detail_anime']) ? $params['id_detail_anime'] : '');
+        $idListAnime = (isset($params['id_list_anime']) ? $params['id_list_anime'] : '');
+        $code = (isset($params['code']) ? $params['code'] : '');
+        $episode = (isset($params['title']) ? $params['title'] : '');
+        $Slug = (isset($params['slug']) ? $params['slug'] : '');
+        $title = (isset($params['title']) ? $params['title'] : '');
+        $startDate = (isset($params['start_date']) ? $params['start_date'] : '');
+        $endDate = (isset($params['end_date']) ? $params['end_date'] : '');
+        $isUpdated = (isset($params['is_updated']) ? $params['is_updated'] : FALSE); #untuk data terbaru 2 jam terakhir
+        
+        $tabel_name = 'stream_anime';
+        ini_set('memory_limit','1024M');
+        $query = DB::connection('application_db')
+            ->table('stream_anime as  SA')
+            ->select([
+                'SA.id', 'SA.id_list_episode', 'SA.id_detail_anime', 
+                'SA.id_list_anime', 'SA.code', 'SA.slug', 'SA.title','SA.cron_at',
+                'DA.image', 'DA.status', 'DA.rating', 'DA.genre', 
+                'DA.episode_total', 'score', 'rating','DA.synopsis'
+            ])
+            ->leftJoin('detail_anime AS DA', 'DA.id', '=', 'SA.id_detail_anime');
+        
+        if(!empty($code)) $query = $query->where('SA.code', '=', $code);
+        if(!empty($ID)) $query = $query->where('SA.id', '=', $ID);
+        if(!empty($idListEpisode)) $query = $query->where('SA.id_list_episode', '=', $idListEpisode);
+        if(!empty($idDetailAnime)) $query = $query->where('SA.id_detail_anime', '=', $idDetailAnime);
+        if(!empty($idListAnime)) $query = $query->where('SA.id_list_anime', '=', $idListAnime);
+        if(!empty($Slug)) $query = $query->where('SA.slug', '=', $Slug);    
+        if(!empty($episode)) $query = $query->where('SA.title', 'Like', "%".$episode);
+        if($isUpdated){ #ambil data update atau terbaru
+            $startDate = Carbon::parse($startDate)->timestamp;
+            $endDate = Carbon::parse($endDate)->timestamp;
+            $query = $query->whereBetween('SA.cron_at', [$startDate, $endDate]);
+        }else{
+            if(!empty($startDate) && empty($endDate)) $query = $query->where('SA.cron_at', '>=', $startDate);
+            if($startDate && $endDate) $query = $query->whereBetween('SA.cron_at', [$startDate, $endDate]);
+        }
+        $query = $query->get();
+
+        $result = [];
+        if(count($query)) $result = collect($query)->map(function($x){ return (array) $x; })->toArray();
+        return $result;
+    }
+    #================ End getStreamAnimeJoin ==================================
     
     /**
      * @author [Prayugo]
@@ -775,6 +986,7 @@ class MainModel extends Model
     public static function getServerStream($params = []){
         $code = (isset($params['code']) ? $params['code'] : '');
         $id_stream_anime = (isset($params['id_stream_anime']) ? $params['id_stream_anime'] : '');
+        $ID = (isset($params['id']) ? $params['id'] : '');
         $tabel_name = 'server_stream';
         ini_set('memory_limit','1024M');
         $query = DB::connection('application_db')
@@ -782,6 +994,7 @@ class MainModel extends Model
         
         if(!empty($code)) $query = $query->where('code', '=', $code);
         if(!empty($id_stream_anime)) $query = $query->where('id_stream_anime', '=', $id_stream_anime);
+        if(!empty($ID)) $query = $query->where('id', '=', $ID);
         $query = $query->get();
 
         $result = [];

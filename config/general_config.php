@@ -11,6 +11,7 @@ $config['mongo']['use_collection_detail_anime'] = env('DB_COLLECTIONS_DETAIL_ANI
 $config['mongo']['use_collection_list_episode'] = env('DB_COLLECTIONS_LIST_EPISODE', 'contents');
 $config['mongo']['use_collection_stream_anime'] = env('DB_COLLECTIONS_STREAM_ANIME', 'contents');
 $config['mongo']['use_collection_trending_week'] = env('DB_COLLECTIONS_TRENDING_WEEK', 'contents');
+$config['mongo']['use_collection_genrelist_anime'] = env('DB_COLLECTIONS_GENRE_LIST_ANIME', 'contents');
 
 
 return $config;

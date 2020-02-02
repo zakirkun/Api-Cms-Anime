@@ -16,6 +16,10 @@ $router->group(['prefix' => 'N/1', 'namespace' => 'Nanime'], function () use ($r
 
     // generate to mongo
     $router->post('ListAnimeGenerate', 'ListAnimeController@ListAnimeGenerate');
+    $router->post('DetailAnimeGenerate', 'DetailListAnimeController@generateDetailAnime');
+    $router->post('LastUpdateAnimeGenerate', 'LastUpdateEpsAnimController@generateLastUpdateAnime');
+    $router->post('GenreListAnimeGenerate', 'GenreListAnimeController@generateGenreListAnime');
+    $router->post('StreamAnimeGenerate', 'StreamAnimeController@generateStreamAnime');
 
 });
 

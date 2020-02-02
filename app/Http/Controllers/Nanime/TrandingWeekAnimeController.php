@@ -16,6 +16,7 @@ use Illuminate\Support\Str;
 #Helpers
 use App\Helpers\V1\MappingResponseMysql as MappingMysql;
 use App\Helpers\V1\EnkripsiData as EnkripsiData;
+use App\Helpers\V1\ResponseConnected as ResponseConnected;
 
 #Load Models V1
 use App\Models\V1\MainModel as MainModel;
@@ -23,6 +24,12 @@ use App\Models\V1\MainModel as MainModel;
 // done tinggal token
 class TrandingWeekAnimeController extends Controller
 {
+    /**
+     * @author [Prayugo]
+     * @create date 2020-01-28 18:19:27
+     * @desc [TrandingWeekAnime]
+     */
+    // ============================== TrandingWeekAnime Save To Mysql ========================
     public function TrandingWeekAnime(Request $request = NULL, $params = NULL){
         $awal = microtime(true);
         if(!empty($request) || $request != NULL){
@@ -40,86 +47,13 @@ class TrandingWeekAnimeController extends Controller
                 $BASE_URL_LIST=$BASE_URL;
                 return $this->TrandingWeekAnimValue($BASE_URL_LIST,$BASE_URL,$awal);
             // }catch(\Exception $e){
-            //     return $this->InternalServerError();
+            //     return ResponseConnected::InternalServerError("Trending Week Anime","Internal Server Error");
             // }
             
         }else{
-            return $this->InvalidToken();
+            return ResponseConnected::InvalidToken("Trending Week Anime","Invalid Token", $awal);
+            // return $this->InvalidToken();
         }
-    }
-    public function InternalServerError(){
-        $API_TheMovie=array(
-            "API_TheMovieRs"=>array(
-                "Version"=> "N.1",
-                "Timestamp"=> Carbon::now()->format(DATE_ATOM),
-                "NameEnd"=>"Tranding Week Anime",
-                "Status"=> "Not Complete",
-                "Message"=>array(
-                    "Type"=> "Info",
-                    "ShortText"=> "Internal Server Error",
-                    "Code" => 500
-                ),
-                "Body"=> array()
-            )
-        );
-        return $API_TheMovie;
-    }
-
-    public function Success($save,$LogSave,$awal){
-
-        $API_TheMovie=array(
-            "API_TheMovieRs"=>array(
-                "Version"=> "N.1",
-                "Timestamp"=> Carbon::now()->format(DATE_ATOM),
-                "NameEnd"=>"Tranding Week Anime",
-                "Status"=> "Complete",
-                "Message"=>array(
-                    "Type"=> "Info",
-                    "ShortText"=> "Success Save Mysql",
-                    "Speed" => self::SpeedResponse($awal),
-                    "Code" => 200
-                ),
-                "LogBody"=> array(
-                    "DataLog"=>$LogSave
-                )
-            )
-        );
-        return $API_TheMovie;
-    }
-    public function PageNotFound(){
-        $API_TheMovie=array(
-            "API_TheMovieRs"=>array(
-                "Version"=> "N.1",
-                "Timestamp"=> Carbon::now()->format(DATE_ATOM),
-                "NameEnd"=>"Tranding Week Anime",
-                "Status"=> "Not Complete",
-                "Message"=>array(
-                    "Type"=> "Info",
-                    "ShortText"=> "Page Not Found.",
-                    "Code" => 404
-                ),
-                "Body"=> array()
-            )
-        );
-        return $API_TheMovie;
-    }
-
-    public function InvalidToken(){
-        $API_TheMovie=array(
-            "API_TheMovieRs"=>array(
-                "Version"=> "N.1",
-                "Timestamp"=> Carbon::now()->format(DATE_ATOM),
-                "NameEnd"=>"Tranding Week Anime",
-                "Status"=> "Not Complete",
-                "Message"=>array(
-                    "Type"=> "Info",
-                    "ShortText"=> "Invalid Token",
-                    "Code" => 203
-                ),
-                "Body"=> array()
-            )
-        );
-        return $API_TheMovie;
     }
 
     public function TrandingWeekAnimValue($BASE_URL_LIST,$BASE_URL,$awal){
@@ -252,22 +186,130 @@ class TrandingWeekAnimeController extends Controller
                         
 
                     }
-                    return $this->Success($save,$LogSave,$awal);
+                    return ResponseConnected::Success("Trending Week Anime", $save, $LogSave, $awal);
+                    // return $this->Success($save,$LogSave,$awal);
                 }else{
-                    return $this->PageNotFound();
+                    return ResponseConnected::PageNotFound("Trending Week Anime","Page Not Found.", $awal);
+                    // return $this->PageNotFound();
                 }
             }else{
-                return $this->PageNotFound();
+                return ResponseConnected::PageNotFound("Trending Week Anime","Page Not Found.", $awal);
+                // return $this->PageNotFound();
             }
     }
+    // ============================== End TrandingWeekAnime Save To Mysql ========================
 
-    public static function SpeedResponse($awal){
-        $akhir = microtime(true);
-        $durasi = $akhir - $awal;
-        $jam = (int)($durasi/60/60);
-        $menit = (int)($durasi/60) - $jam*60;
-        $detik = $durasi - $jam*60*60 - $menit*60;
-        return $kecepatan = number_format((float)$detik, 2, '.', '');
+    /**
+     * @author [Prayugo]
+     * @create date 2020-01-28 18:19:27
+     * @desc [generateTrendingWeekAnime]
+     */
+    // ============================== generateTrendingWeekAnime Save To Mongo ========================
+    public function generateTrendingWeekAnime(Request $request = NULL, $params = NULL){
+
+        $param = $params; # get param dari populartopiclist atau dari cron
+        if(is_null($params)) $param = $request->all();
+
+        $id = (isset($param['params']['id']) ? $param['params']['id'] : NULL);
+        $code = (isset($param['params']['code']) ? $param['params']['code'] : '');
+        $slug = (isset($param['params']['slug']) ? $param['params']['slug'] : '');
+        $title = (isset($param['params']['title']) ? $param['params']['title'] : '');
+        $startDate = (isset($param['params']['start_date']) ? $param['params']['start_date'] : NULL);
+        $endDate = (isset($param['params']['end_date']) ? $param['params']['end_date'] : NULL);
+        $isUpdated = (isset($param['params']['is_updated']) ? filter_var($param['params']['is_updated'], FILTER_VALIDATE_BOOLEAN) : FALSE);
+
+        #jika pakai range date
+        $showLog = (isset($param['params']['show_log']) ? $param['params']['show_log'] : FALSE);
+        $parameter = [
+            'id' => $id,
+            'code' => $code,
+            'slug' => $slug,
+            'title' => $title,
+            'start_date' => $startDate,
+            'end_date' => $endDate,
+            'is_updated' => $isUpdated
+        ];
+
+        $trendingWeek = MainModel::getDataTrendingWeek($parameter);
+
+        $errorCount = 0;
+        $successCount = 0;
+        if(count($trendingWeek)){
+            foreach($trendingWeek as $trendingWeek){
+                $conditions = [
+                    'id_auto' => $trendingWeek['id'].'-trendingWeek',
+                ];
+
+                $MappingMongo = array(
+                    'id_auto' => $trendingWeek['id'].'-trendingWeek',
+                    'id_list_anime' => $trendingWeek['id_list_anime'],
+                    'id_detail_anime' => $trendingWeek['id'],
+                    'source_type' => 'trendingWeek-Anime',
+                    'code' => $trendingWeek['code'],
+                    'title' => Converter::__normalizeSummary($trendingWeek['title']),
+                    'slug' => $trendingWeek['slug'],
+                    'synopsis' => $trendingWeek['synopsis'],
+                    'episode' => $dataEps,
+                    'image' => $trendingWeek['image'],
+                    'status' => $trendingWeek['status'],
+                    'rating' => $trendingWeek['rating'],
+                    'genre' => explode('|',substr(trim($trendingWeek['genre']),0,-1)),
+                    'keyword' => explode('-',$trendingWeek['slug']),
+                    'meta_title' => (Converter::__normalizeSummary(strtolower($trendingWeek['title']))),
+                    'meta_keywords' => explode('-',$trendingWeek['slug']),
+                    'meta_tags' => explode('-',$trendingWeek['slug']),
+                    'cron_at' => $trendingWeek['cron_at']
+                );
+
+                // $updateMongo = MainModelMongo::updateTrendingWeekAnime($MappingMongo, $this->mongo['collections_detail_anime'], $conditions, TRUE);
+                $status = 400;
+                $message = '';
+                $messageLocal = '';
+                if($updateMongo['status'] == 200){
+                    $status = 200;
+                    $message = 'success';
+                    $messageLocal = $updateMongo['message_local'];
+                    $successCount++;
+
+                }else{
+                    #jika dari cron dan pakai last_date atau pakai generate error
+                    #set error id generate
+                    if( (!is_null($params) && $endDate == TRUE) || (!is_null($params) && !empty($ids)) ){
+                        $error_id['response']['id'][$key] = $ListAnime['id']; #set id error generate
+                    }
+
+                    $status = 400;
+                    $message = 'error';
+                    $messageLocal = serialize($updateMongo['message_local']);
+                    $errorCount++;
+                }
+
+                #show log response
+                if($showLog){
+                    $slug = $MappingMongo['slug'];
+                    $prefixDate = Carbon::parse($MappingMongo['cron_at'])->format('Y-m-d H:i:s');
+                    if($isUpdated == TRUE) $prefixDate = Carbon::parse($MappingMongo['cron_at'])->format('Y-m-d H:i:s');
+                    echo $message.' | '.$prefixDate.' | '.$MappingMongo['id_auto'] .' => '.$slug.' | '.$messageLocal."\n";
+
+                }
+                
+            }
+        }else{
+            $status = 400;
+            $message = 'data tidak ditemukan';
+        }
+
+        $response['error'] = $errorCount;
+        $response['success'] = $successCount;
+
+        if(!is_null($params)){ # untuk cron
+            return $response;
+        }else{
+            return (new Response($response, 200))
+                ->header('Content-Type', 'application/json');
+        }
     }
+    // ============================== End generateTrendingWeekAnime Save To Mongo ========================
+    
 
 }
