@@ -67,11 +67,11 @@ class LastUpdateEpsAnimController extends Controller
         if($Token){
             // try{
                 $ConfigController = new ConfigController();
-                $BASE_URL=$ConfigController->BASE_URL_ANIME_1;
+                $BASE_URL = $ConfigController->BASE_URL_ANIME_3;
                 if($PageNumber<2){
-                    $BASE_URL_LIST=$BASE_URL;
+                    $BASE_URL_LIST = $BASE_URL;
                 }else{
-                    $BASE_URL_LIST=$BASE_URL."/?page=".$PageNumber;
+                    $BASE_URL_LIST = $BASE_URL."page/".$PageNumber;
                 }
                 return $this->LastUpdateAnimValue($PageNumber,$BASE_URL_LIST,$BASE_URL,$awal);
             // }catch(\Exception $e){
@@ -106,7 +106,7 @@ class LastUpdateEpsAnimController extends Controller
         return $href;
     }
 
-    public function LastUpdateAnimValue($PageNumber,$BASE_URL_LIST,$BASE_URL,$awal){
+    public function LastUpdateAnimValue($PageNumber, $BASE_URL_LIST,$BASE_URL, $awal){
         $client = new Client(['cookies' => new FileCookieJar('cookies.txt')]);
         $client->getConfig('handler')->push(CloudflareMiddleware::create());
         $goutteClient = new GoutteClient();
@@ -117,36 +117,37 @@ class LastUpdateEpsAnimController extends Controller
         
         // $Body=(string)$response->getBody();
         if($status == 200){
+            
             $LastUpdateEps= $crawler->filter('.col-md-7')->each(function ($node,$i) {
                 
-                $subhref = $node->filter('.col-md-3')->each(function ($nodel, $i) {
+                $subhref = $node->filter('.col-sm-3')->each(function ($nodel, $i) {
                     $href = $nodel->filter('a')->attr("href");
                     $image = $nodel->filter('img')->attr("src");
                     $titleAlias = $nodel->filter('.post-title')->text('Default text content');
                     $title = $nodel->filter('.post-title')->attr("title");
                     $status =  $nodel->filter('.status')->text('Default text content');
                     $episode =  $nodel->filter('.episode')->text('Default text content');
-                    
                     $ListUpdtnime = array(
                             "hrefSingleList" => $href,
                             "image" => $image,
                             "titleAlias" => $titleAlias,
                             "title" => $title,
                             "status" => $status,
-                            "episode" => $episode
+                            "episode" => $episode,
+                            "slugDetail" => substr(strrchr($href, '/'), 1),
                     );
                     
                     return $ListUpdtnime;
                 });
                 return $subhref; 
             });
-            
+
             if($LastUpdateEps){
                 
                 $SingleEpisode = array();
                 $hrefKeyListAnim = array();
                 for($i=0;$i<count($LastUpdateEps[0]);$i++){
-                    $SingleListHref=$BASE_URL."".$LastUpdateEps[0][$i]['hrefSingleList'];
+                    $SingleListHref = $LastUpdateEps[0][$i]['hrefSingleList'];
                     $hrefKeyListAnim[] = $SingleListHref;
                     $crawler2 = $goutteClient->request('GET', $SingleListHref);
                     $response2 = $goutteClient->getResponse();
@@ -157,6 +158,7 @@ class LastUpdateEpsAnimController extends Controller
                     }
                     
                     if($DetailHref){
+                        dd($DetailHref);
                         $SubListDetail= $crawler2->filter('.col-md-7')->each(function ($node,$i) {
                             $synopsis = $node->filter('.description > p')->text('Default text content');
                             $Subgenre = $node->filter('.description')->html();
@@ -187,6 +189,7 @@ class LastUpdateEpsAnimController extends Controller
                             );
                             return $SubListDetail; 
                         });
+
                     }else{
                         $SubListDetail= $crawler2->filter('.col-md-7')->each(function ($node,$i) {
 
@@ -291,7 +294,7 @@ class LastUpdateEpsAnimController extends Controller
                                             'name_index' => "#".substr(ucfirst($Title), 0, 1),
                                             'cron_at' => Carbon::now()->format('Y-m-d H:i:s')
                                         );
-                                        $save = MainModel::insertListAnimeMysql($Input);
+                                        // $save = MainModel::insertListAnimeMysql($Input);
                                     }else{
                                         $conditions['id'] = $idListAnime;
                                         $Update = array(
@@ -302,7 +305,7 @@ class LastUpdateEpsAnimController extends Controller
                                             'name_index' => "#".substr(ucfirst($Title), 0, 1),
                                             'cron_at' => Carbon::now()->format('Y-m-d H:i:s')
                                         );
-                                        $save = MainModel::updateListAnimeMysql($Update,$conditions);
+                                        // $save = MainModel::updateListAnimeMysql($Update,$conditions);
                                     }
                                     $codeListAnime['code'] = md5($cdListAnime);
                                     $listAnime = MainModel::getDataListAnime($codeListAnime);
@@ -369,7 +372,7 @@ class LastUpdateEpsAnimController extends Controller
                                         'cron_at' => Carbon::now()->format('Y-m-d H:i:s')
                                     );
                                     $LogSave [] = "Data Save - ".$Slug;
-                                    $save = MainModel::insertLastUpdateMysql($Input);
+                                    // $save  = MainModel::insertLastUpdateMysql($Input);
                                 }else{
                                     $conditions['id'] = $checkExist[0]['id'];
                                     $Update = array(
@@ -389,7 +392,7 @@ class LastUpdateEpsAnimController extends Controller
                                         'cron_at' => Carbon::now()->format('Y-m-d H:i:s')
                                     );
                                     $LogSave [] =  "Data Update - ".$Slug;
-                                    $save = MainModel::updateLastUpdateMysql($Update,$conditions);
+                                    // $save = MainModel::updateLastUpdateMysql($Update,$conditions);
                                 }
                             }#End save to Data Last Update
 
