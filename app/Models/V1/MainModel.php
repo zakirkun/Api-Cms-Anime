@@ -610,7 +610,7 @@ class MainModel extends Model
             $query = $query->whereBetween('cron_at', [$startDate, $endDate]);
         }else{
             if(!empty($startDate) && empty($endDate)) $query = $query->where('cron_at', '>=', $startDate);
-            if($startDate && $endDate) $query = $query->whereBetween('cron_at', [$startDate, $endDate]);
+            if(!empty($startDate) && !empty($endDate)) $query = $query->whereBetween('cron_at', [$startDate, $endDate]);
         }
         $query = $query->get();
 

@@ -453,6 +453,7 @@ class LastUpdateEpsAnimController extends Controller
                     'id_list_anime' => $LastUpdate['id_list_anime'],
                     'id_detail_anime' => $LastUpdate['id_detail_anime'],
                     'id_last_update' => $LastUpdate['id'],
+                    'id_list_episode' => $LastUpdate['id_list_episode'],
                     'source_type' => 'lastUpdate-Anime',
                     'code' => $LastUpdate['code'],
                     'title' => Converter::__normalizeSummary($LastUpdate['title']),
@@ -466,6 +467,7 @@ class LastUpdateEpsAnimController extends Controller
                     'meta_tags' => explode('-',$LastUpdate['slug']),
                     'cron_at' => $LastUpdate['cron_at']
                 );
+                
                 $updateMongo = MainModelMongo::updateLastUpdateAnime($MappingMongo, $this->mongo['collections_last_update'], $conditions, TRUE);
 
                 $status = 400;
