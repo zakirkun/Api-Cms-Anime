@@ -60,6 +60,10 @@ class CronLastUpdateGenerateByDate extends Command
         $filename = $path_log.'/CronLastUpdateGenerateByDate.json';
         #get file log last date generate
         if(file_exists($filename)) $content = file_get_contents($filename);
+        // if($isUpdate){
+        //     $startDate = date('Y-m-d');
+        //     $EndDate = '';
+        // }
         
         $response = [];
         $status = "Complete";

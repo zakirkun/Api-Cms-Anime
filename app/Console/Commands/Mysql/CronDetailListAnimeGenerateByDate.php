@@ -67,6 +67,7 @@ class CronDetailListAnimeGenerateByDate extends Command
             'end_date' => $EndDate
         ];
         $listAnime = MainModel::getDataListAnime($param);
+        
         $status = "Complete";
         $i = 0;
         $dataNotSave = array();

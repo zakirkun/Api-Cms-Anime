@@ -25,7 +25,7 @@ class CronStreamAnimeGenerateByDate extends Command
      *
      * @var string
      */
-    protected $signature = 'CronStreamAnimeGenerateByDate:CronStreamAnimeGenerateByDateV1 {start_date} {end_date}';
+    protected $signature = 'CronStreamAnimeGenerateByDate:CronStreamAnimeGenerateByDateV1 {start_date} {end_date} {is_update}';
 
     /**
      * The console command description.
@@ -53,13 +53,18 @@ class CronStreamAnimeGenerateByDate extends Command
     public function handle(){
         $startDate = $this->argument('start_date');
         $EndDate = $this->argument('end_date');
-        // $showLog = filter_var($this->argument('show_log'), FILTER_VALIDATE_BOOLEAN);
+        $isUpdate = filter_var($this->argument('is_update'), FILTER_VALIDATE_BOOLEAN);
 
         $path_log = base_path('storage/logs/generate/mysql');
         $filename = $path_log.'/CronStreamAnimeGenerateByDateV1.json';
         #get file log last date generate
         if(file_exists($filename)) $content = file_get_contents($filename);
         
+        if($isUpdate){
+            $startDate = date('Y-m-d');
+            $EndDate = '';
+        }
+
         $response = [];
         $param = [
             'code' => '',
@@ -67,6 +72,7 @@ class CronStreamAnimeGenerateByDate extends Command
             'end_date' => $EndDate
         ];
         $listEpsAnime = MainModel::getDataListEpisodeAnime($param);
+        
         $status = "Complete";
         $i = 0;
         $dataNotSave = array();

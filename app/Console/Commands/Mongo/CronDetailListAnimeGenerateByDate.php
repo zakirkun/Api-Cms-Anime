@@ -25,7 +25,7 @@ class CronDetailListAnimeGenerateByDate extends Command
      *
      * @var string
      */
-    protected $signature = 'CronDetailListAnimeGenerateByDateMG:DetailListAnimeGenerateByDateMGV1  {start_date} {end_date}';
+    protected $signature = 'CronDetailListAnimeGenerateByDateMG:DetailListAnimeGenerateByDateMGV1  {start_date} {end_date} {is_update}';
 
     /**
      * The console command description.
@@ -53,12 +53,16 @@ class CronDetailListAnimeGenerateByDate extends Command
     public function handle(){
         $startDate = $this->argument('start_date');
         $EndDate = $this->argument('end_date');
-        // $showLog = filter_var($this->argument('show_log'), FILTER_VALIDATE_BOOLEAN);
+        $isUpdate = filter_var($this->argument('is_update'), FILTER_VALIDATE_BOOLEAN);
 
         $path_log = base_path('storage/logs/generate/mysql');
         $filename = $path_log.'/DetailListAnimeGenerateByDateV1.json';
         #get file log last date generate
         if(file_exists($filename)) $content = file_get_contents($filename);
+        if($isUpdate){
+            $startDate = date('Y-m-d');
+            $EndDate = '';
+        }
         
         $response = [];
         $param = [
@@ -66,7 +70,7 @@ class CronDetailListAnimeGenerateByDate extends Command
             'end_date' => $EndDate
         ];
         
-        $listAnime = MainModel::getDataListAnime($param);
+        $listAnime = MainModel::getDataDetailAnime($param);
         
         $status = "Complete";
         $i = 0;
@@ -75,7 +79,7 @@ class CronDetailListAnimeGenerateByDate extends Command
         foreach($listAnime as $listAnime){
             $listDataAnime = [
                 'params' => [
-                    'id_list_anime' => $listAnime['id'],
+                    'id' => $listAnime['id'],
                     'show_log' => TRUE
                 ]
             ];

@@ -209,6 +209,7 @@ class ListAnimeController extends Controller
         ];
         
         $ListAnime = MainModel::getDataListAnimeJoin($parameter);
+        
         $errorCount = 0;
         $successCount = 0;
         if(count($ListAnime)){

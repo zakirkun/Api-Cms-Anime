@@ -25,7 +25,7 @@ class CronLIstAnimeGenerateByDate extends Command
      *
      * @var string
      */
-    protected $signature = 'CronLIstAnimeGenerateByDate:CronLIstAnimeGenerateByDateV1 {start_date} {end_date}';
+    protected $signature = 'CronLIstAnimeGenerateByDate:CronLIstAnimeGenerateByDateV1 {start_date} {end_date} {is_update}';
 
     /**
      * The console command description.
@@ -53,12 +53,16 @@ class CronLIstAnimeGenerateByDate extends Command
     public function handle(){
         $startDate = $this->argument('start_date');
         $EndDate = $this->argument('end_date');
+        $isUpdate = filter_var($this->argument('is_update'), FILTER_VALIDATE_BOOLEAN);
 
         $path_log = base_path('storage/logs/generate/Mongo');
         $filename = $path_log.'/CronLIstAnimeGenerateByDate.json';
         #get file log last date generate
         if(file_exists($filename)) $content = file_get_contents($filename);
-        
+        if($isUpdate){
+            $startDate = date('Y-m-d');
+            $EndDate = '';
+        }
         $response = [];
         $status = "Complete";
         $ListAnime = [
@@ -69,7 +73,8 @@ class CronLIstAnimeGenerateByDate extends Command
             ]
         ];
         try{
-            $data = $this->ListAnimeController->ListAnime(NULL,$ListAnime);
+            $data = $this->ListAnimeController->ListAnimeGenerate(NULL,$ListAnime);
+            
             echo json_encode($data)."\n\n";
         }catch(\Exception $e){
             $status = 'Not Complete';
