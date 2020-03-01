@@ -109,7 +109,7 @@ class MainModel extends Model
         
         $startDate = (isset($params['start_date']) ? $params['start_date'] : '');
         $endDate = (isset($params['end_date']) ? $params['end_date'] : '');
-        $isUpdated = (isset($params['is_updated']) ? $params['is_updated'] : FALSE); #untuk data terbaru 2 jam terakhir
+        $isUpdated = (isset($params['is_updated']) ? filter_var($params['is_updated'], FILTER_VALIDATE_BOOLEAN) : FALSE);
         $lastDate = (isset($params['last_date']) ? filter_var($params['last_date'], FILTER_VALIDATE_BOOLEAN) : FALSE);
 
         $tabel_name = 'last_update';
@@ -124,8 +124,8 @@ class MainModel extends Model
         if(!empty($Title)) $query = $query->where('title', 'Like', "%".$Title);
 
         if($isUpdated){ #ambil data update atau terbaru
-            $startDate = Carbon::parse($startDate)->timestamp;
-            $endDate = Carbon::parse($endDate)->timestamp;
+            $startDate = date('Y-m-d');
+            $endDate = date("Y-m-d", strtotime('tomorrow'));
             $query = $query->whereBetween('cron_at', [$startDate, $endDate]);
         }else{
             if(!empty($startDate) && empty($endDate)) $query = $query->where('cron_at', '>=', $startDate);
@@ -218,8 +218,8 @@ class MainModel extends Model
             }
         }
         if($isUpdated){ #ambil data update atau terbaru
-            $startDate = Carbon::parse($startDate)->timestamp;
-            $endDate = Carbon::parse($endDate)->timestamp;
+            $startDate = date('Y-m-d');
+            $endDate = date("Y-m-d", strtotime('tomorrow'));
             $query = $query->whereBetween('LA.cron_at', [$startDate, $endDate]);
         }else{
             if(!empty($startDate) && empty($endDate)) $query = $query->where('LA.cron_at', '>=', $startDate);
@@ -325,8 +325,8 @@ class MainModel extends Model
             }
         }
         if($isUpdated){ #ambil data update atau terbaru
-            $startDate = Carbon::parse($startDate)->timestamp;
-            $endDate = Carbon::parse($endDate)->timestamp;
+            $startDate = date('Y-m-d');
+            $endDate = date("Y-m-d", strtotime('tomorrow'));
             $query = $query->whereBetween('cron_at', [$startDate, $endDate]);
         }
         $query = $query->get();
@@ -422,8 +422,8 @@ class MainModel extends Model
         if(!empty($Title)) $query = $query->where('title', 'Like', "%".$Title);
 
         if($isUpdated){ #ambil data update atau terbaru
-            $startDate = Carbon::parse($startDate)->timestamp;
-            $endDate = Carbon::parse($endDate)->timestamp;
+            $startDate = date('Y-m-d');
+            $endDate = date("Y-m-d", strtotime('tomorrow'));
             $query = $query->whereBetween('cron_at', [$startDate, $endDate]);
         }else{
             if(!empty($startDate) && empty($endDate)) $query = $query->where('cron_at', '>=', $startDate);
@@ -605,8 +605,8 @@ class MainModel extends Model
         if(!empty($Title)) $query = $query->where('title', 'Like', "%".$Title);
         
         if($isUpdated){ #ambil data update atau terbaru
-            $startDate = Carbon::parse($startDate)->timestamp;
-            $endDate = Carbon::parse($endDate)->timestamp;
+            $startDate = date('Y-m-d');
+            $endDate = date("Y-m-d", strtotime('tomorrow'));
             $query = $query->whereBetween('cron_at', [$startDate, $endDate]);
         }else{
             if(!empty($startDate) && empty($endDate)) $query = $query->where('cron_at', '>=', $startDate);
@@ -741,8 +741,8 @@ class MainModel extends Model
         
 
         if($isUpdated){ #ambil data update atau terbaru
-            $startDate = Carbon::parse($startDate)->timestamp;
-            $endDate = Carbon::parse($endDate)->timestamp;
+            $startDate = date('Y-m-d');
+            $endDate = date("Y-m-d", strtotime('tomorrow'));
             $query = $query->whereBetween('LA.cron_at', [$startDate, $endDate]);
         }else{
             if(!empty($startDate) && empty($endDate)) $query = $query->where('LA.cron_at', '>=', $startDate);
@@ -847,8 +847,8 @@ class MainModel extends Model
         if(!empty($Slug)) $query = $query->where('slug', '=', $Slug);    
         if(!empty($episode)) $query = $query->where('title', 'Like', "%".$episode);
         if($isUpdated){ #ambil data update atau terbaru
-            $startDate = Carbon::parse($startDate)->timestamp;
-            $endDate = Carbon::parse($endDate)->timestamp;
+            $startDate = date('Y-m-d');
+            $endDate = date("Y-m-d", strtotime('tomorrow'));
             $query = $query->whereBetween('cron_at', [$startDate, $endDate]);
         }else{
             if(!empty($startDate) && empty($endDate)) $query = $query->where('cron_at', '>=', $startDate);
@@ -903,8 +903,8 @@ class MainModel extends Model
         if(!empty($Slug)) $query = $query->where('SA.slug', '=', $Slug);    
         if(!empty($episode)) $query = $query->where('SA.title', 'Like', "%".$episode);
         if($isUpdated){ #ambil data update atau terbaru
-            $startDate = Carbon::parse($startDate)->timestamp;
-            $endDate = Carbon::parse($endDate)->timestamp;
+            $startDate = date('Y-m-d');
+            $endDate = date("Y-m-d", strtotime('tomorrow'));
             $query = $query->whereBetween('SA.cron_at', [$startDate, $endDate]);
         }else{
             if(!empty($startDate) && empty($endDate)) $query = $query->where('SA.cron_at', '>=', $startDate);
@@ -1060,5 +1060,90 @@ class MainModel extends Model
         return $data;
     }
     #================ End updateServerStreamMysql ==================================
+
+     /**
+     * @author [Prayugo]
+     * @create date 2020-02-17 11:23:37
+     * @modify date 2020-02-17 11:23:37
+     * @desc function getDownloadStream
+     */
+    #================  getDownloadStream ==================================
+    public static function getDownloadStream($params = []){
+        $code = (isset($params['code']) ? $params['code'] : '');
+        $id_stream_anime = (isset($params['id_stream_anime']) ? $params['id_stream_anime'] : '');
+        $ID = (isset($params['id']) ? $params['id'] : '');
+        $tabel_name = 'download_stream';
+        ini_set('memory_limit','1024M');
+        $query = DB::connection('application_db')
+            ->table($tabel_name);
+        
+        if(!empty($code)) $query = $query->where('code', '=', $code);
+        if(!empty($id_stream_anime)) $query = $query->where('id_stream_anime', '=', $id_stream_anime);
+        if(!empty($ID)) $query = $query->where('id', '=', $ID);
+        $query = $query->get();
+
+        $result = [];
+        if(count($query)) $result = collect($query)->map(function($x){ return (array) $x; })->toArray();
+        return $result;
+    }
+    #================ End getDownloadStream ==================================
+    
+    /**
+     * @author [Prayugo]
+     * @create date 2020-02-17 11:23:37
+     * @modify date 2020-02-17 11:23:37
+     * @desc function insertDownloadStreamMysql
+     */
+    #================  insertDownloadStreamMysql ==================================
+    public static function insertDownloadStreamMysql($data_all = [], $justInsert = FALSE){
+        $tabel_name = 'download_stream';
+        $query = DB::connection('application_db')
+            ->table($tabel_name);
+        if($justInsert){
+            $query = $query->insert($data_all);
+        }else{
+            $query = $query->insertGetId($data_all);
+        }
+        $error = [];
+        $data['status'] = 200;
+        $data['message'] = 'success insert '.$tabel_name;
+        if(!$query) {
+            $data['status'] = 400;
+            $data['message'] = 'failed insert '.$tabel_name;
+            $error['msg'] = 'error insert '.$tabel_name;
+            $error['num'] = 'error num insert '.$tabel_name;
+        }
+
+        $data['error'] 	= $error;
+        if(!$justInsert) $data['id_result'] = $query;
+        return $data;
+    }
+    #================ End insertServerStreamMysql ==================================
+
+    /**
+     * @author [Prayugo]
+     * @create date 2020-02-17 11:23:37
+     * @modify date 2020-02-17 11:23:37
+     * @desc function updateDownloadStreamMysql
+     */
+    #================  updateDownloadStreamMysql ==================================
+    public static function updateDownloadStreamMysql($data_all = [], $conditions){
+        $tabel_name = 'download_stream';
+        $query = DB::connection('application_db')
+            ->table($tabel_name);
+
+        foreach($conditions as $key => $value){
+            $query = $query->where($key, $value);
+        }
+        $query = $query->update($data_all);
+        $data['status'] = 400;
+        $data['message'] = 'failed insert '.$tabel_name;
+        if($query){
+            $data['status'] = 200;
+            $data['message'] = 'success insert '.$tabel_name;
+        }
+        return $data;
+    }
+    #================ End updateDownloadStreamMysql ==================================
 
 }

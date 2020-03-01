@@ -25,7 +25,7 @@ class CronDetailListAnimeGenerateByAlfabet extends Command
      *
      * @var string
      */
-    protected $signature = 'CronDetailListAnimeGenerateByAlfabet:DetailListAnimeGenerateByAlfabetV1  {start_by_index} {end_by_index} {all_list}';
+    protected $signature = 'CronDetailListAnimeGenerateByAlfabet:DetailListAnimeGenerateByAlfabetV1  {start_by_index} {end_by_index} ';
 
     /**
      * The console command description.

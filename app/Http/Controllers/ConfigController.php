@@ -12,17 +12,16 @@ use \Sunra\PhpSimple\HtmlDomParser;
 
 class ConfigController 
 {
-    public $BASE_URL_LIST_ANIME_2;
-    public $BASE_URL_ANIME_2;
-    public $BASE_URL_LIST_ANIME_1;
-    public $BASE_URL_ANIME_1;
-    public $BASE_URL_ANIME_3;
+    // public $BASE_URL_LIST_ANIME_2;
+    // public $BASE_URL_ANIME_2;
+    // public $BASE_URL_LIST_ANIME_1;
+    // public $BASE_URL_ANIME_3;
+    // public $BASE_URL_LIST_ANIME_3;
     public function __construct(){
-        $this->BASE_URL_LIST_ANIME_1="https://n.nanime.tv/index/anime/";
-        $this->BASE_URL_ANIME_1="https://n.nanime.tv";
         $this->BASE_URL_LIST_ANIME_2="https://animeindo.to/anime-list/";
         $this->BASE_URL_ANIME_2="https://animeindo.to/";
-        $this->BASE_URL_ANIME_3="https://nanime.yt/";
+        $this->BASE_URL_ANIME_1="https://nanime.yt/";
+        $this->BASE_URL_LIST_ANIME_1="https://nanime.yt/list-semua-anime";
     }
     
 }

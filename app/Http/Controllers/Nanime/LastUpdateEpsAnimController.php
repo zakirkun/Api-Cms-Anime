@@ -67,8 +67,8 @@ class LastUpdateEpsAnimController extends Controller
         if($Token){
             // try{
                 $ConfigController = new ConfigController();
-                $BASE_URL = $ConfigController->BASE_URL_ANIME_3;
-                if($PageNumber<2){
+                $BASE_URL = $ConfigController->BASE_URL_ANIME_1;
+                if($PageNumber < 2){
                     $BASE_URL_LIST = $BASE_URL;
                 }else{
                     $BASE_URL_LIST = $BASE_URL."page/".$PageNumber;
@@ -79,14 +79,15 @@ class LastUpdateEpsAnimController extends Controller
             // }
             
         }else{
+            
             return ResponseConnected::InvalidToken("Last Update Anime","Page Not Found.", $awal);
         }
     }
 
     public function FilterHreftEpisode($value){
         $subHref = explode("<a", $value);
-        $valueHref=str_replace("href","",$subHref[1]);
-        $filterValue=substr($valueHref, strpos($valueHref, '"') + 1);
+        $valueHref =str_replace("href","",$subHref[1]);
+        $filterValue = substr($valueHref, strpos($valueHref, '"') + 1);
         $href = strtok($filterValue, '"');
         return $href;
     }
@@ -99,11 +100,19 @@ class LastUpdateEpsAnimController extends Controller
         }else{
             $i=$countHref;
         }
-        $valueHref=str_replace("href","",$subHref[$i]);
-        $filterValue=substr($valueHref, strpos($valueHref, '?') + 1);
-        $filterValue01=substr($filterValue, strpos($filterValue, '=') + 1);
+        $valueHref = str_replace("href","",$subHref[$i]);
+        $filterValue = substr($valueHref, strpos($valueHref, '?') + 1);
+        $filterValue01 = substr($filterValue, strpos($filterValue, '=') + 1);
         $href = strtok($filterValue01, '"');
         return $href;
+    }
+
+    public function FilterHreftDetail($DetailList){
+        $subHrefDetail = explode("<a",$DetailList);
+        $substring = substr($subHrefDetail[1], 0, strpos($subHrefDetail[1], '>'));
+        $hrefDetField = substr($substring, strpos($substring, "f") + 1);
+        $hrefDetField = str_replace('=','',$hrefDetField);
+        return $hrefDetField;
     }
 
     public function LastUpdateAnimValue($PageNumber, $BASE_URL_LIST,$BASE_URL, $awal){
@@ -141,7 +150,7 @@ class LastUpdateEpsAnimController extends Controller
                 });
                 return $subhref; 
             });
-
+            
             if($LastUpdateEps){
                 
                 $SingleEpisode = array();
@@ -149,75 +158,148 @@ class LastUpdateEpsAnimController extends Controller
                 for($i=0;$i<count($LastUpdateEps[0]);$i++){
                     $SingleListHref = $LastUpdateEps[0][$i]['hrefSingleList'];
                     $hrefKeyListAnim[] = $SingleListHref;
+                    // $crawler2 = $goutteClient->request('GET', 'https://nanime.yt/anime/digimon-adventure-tri');
                     $crawler2 = $goutteClient->request('GET', $SingleListHref);
                     $response2 = $goutteClient->getResponse();
                     try{
-                        $DetailHref =  $crawler2->filter('.col-md-12 > .episodelist')->html();
+                        $DetailHref =  $crawler2->filter('#table-episode')->html();
                     }catch(\Exception $e){
                         $DetailHref ="";
                     }
                     
                     if($DetailHref){
-                        dd($DetailHref);
-                        $SubListDetail= $crawler2->filter('.col-md-7')->each(function ($node,$i) {
-                            $synopsis = $node->filter('.description > p')->text('Default text content');
-                            $Subgenre = $node->filter('.description')->html();
-                            $detGenre = explode("<a", $Subgenre);
-                            $genre=array();
+                        #Episode Detail
+                        $SubListDetail = $crawler2->filter('.col-md-7')->each(function ($node,$i) {
+                            $synopsis = $node->filter('.attachment-text')->text('Default text content');
+                            
+                            $DetailList = $node->filter('tbody')->each(function ($node,$i) {
+                                $DetailListC1 = $node->filter('tr')->each(function ($node,$i) {
+                                    $DetailListC2 = $node->filter('td')->each(function ($node,$i) {
+                                        $ListDetail = $node->filter('td')->html();
+                                        return $ListDetail;
+                                    });
+                                    return $DetailListC2;
+                                });
+                                return $DetailListC1;
+                            });
+                            
+                            $JudulAlternatif = $DetailList[0][1][1];
+                            $Rating = $DetailList[0][2][1];
+                            $Votes = $DetailList[0][3][1];
+                            $TotalEpisode = $DetailList[0][5][1];
+                            $HariTayang = $DetailList[0][7][1];
+
+                            $SubStatus = explode("<a",$DetailList[0][4][1]);
+                            $status = '';
+                            for($j=1;$j<count($SubStatus);$j++){
+                                $statusField = substr($SubStatus[$j], strpos($SubStatus[$j], ">") + 1);
+                                $status .= trim(str_replace('</a>','',$statusField));
+                            }
+                            $Subjudul = explode("<a",$DetailList[0][0][1]);
+                            $judul = '';
+                            for($j=1;$j<count($Subjudul);$j++){
+                                $judulField = substr($Subjudul[$j], strpos($Subjudul[$j], ">") + 1);
+                                $judul .= trim(str_replace('</a>','',$judulField)).' ';
+                            }
+                            
+                            $SubgenreFilter = $DetailList[0][8][1];
+                            $detGenre = explode("<a", $SubgenreFilter);
+                            $genre = array();
                             for($j=1;$j<count($detGenre);$j++){
-                                $genre[]=substr($detGenre[$j], strpos($detGenre[$j], ">") + 1);
+                                $genreField = substr($detGenre[$j], strpos($detGenre[$j], ">") + 1);
+                                $genre[] = trim(str_replace('</a>','',$genreField));
                             } 
-                            $ListDetail = $node->filter('.animeInfo > ul')->html();
-                            $SubDetail01 = explode("<b", $ListDetail);
-                            $SubDetail02=array(
-                                "Judul"=>substr($SubDetail01[2], strpos($SubDetail01[2], ":") + 1),
-                                "JudulAlternatif"=>substr($SubDetail01[2], strpos($SubDetail01[2], ":") + 1),
-                                "Rating"=>substr($SubDetail01[3], strpos($SubDetail01[3], ":") + 1),
-                                "Votes"=>substr($SubDetail01[4], strpos($SubDetail01[4], ":") + 1),
-                                "Status"=>substr($SubDetail01[5], strpos($SubDetail01[5], ":") + 1),
-                                "TotalEpisode"=>substr($SubDetail01[6], strpos($SubDetail01[6], ":") + 1),
-                                "HariTayang"=>substr($SubDetail01[7], strpos($SubDetail01[7], ":") + 1),
+                            
+                            $SubDetail = array(
+                                "Judul" => $judul,
+                                "JudulAlternatif" => $JudulAlternatif,
+                                "Rating" => $Rating,
+                                "Votes" => $Votes,
+                                "Status" => $status,
+                                "TotalEpisode"=> $TotalEpisode,
+                                "HariTayang" => $HariTayang,
 
                             );
-                            $DetailHref =  $node->filter('.col-md-12 > .episodelist')->html();
-                            $href = $this->FilterHreftEpisode($DetailHref);
-                            $SubListDetail=array(
-                                "subDetail"=>$SubDetail02,
-                                "synopsis"=>$synopsis,
-                                "genre"=>$genre,
-                                "hrefEpisode"=>$href
+                            
+                            if(count($DetailList[1]) > 0){
+                                $href = self::FilterHreftEpisode($DetailList[1][0][0]);
+                            } else{
+                                $href = 'Null';
+                            }
+                            
+                            $SubListDetail = array(
+                                "subDetail" => $SubDetail,
+                                "synopsis" => $synopsis,
+                                "genre" => $genre,
+                                "hrefEpisode" => $href,
+                                "slugEps" => substr(strrchr($href, '/'), 1),
                             );
+                            
+                            // dd($SubListDetail);
                             return $SubListDetail; 
                         });
 
                     }else{
+                        #Movie Detail
                         $SubListDetail= $crawler2->filter('.col-md-7')->each(function ($node,$i) {
+                            $synopsis = $node->filter('.attachment-text')->text('Default text content');
+                            $DetailList = $node->filter('tbody')->each(function ($node,$i) {
+                                $DetailListC1 = $node->filter('tr')->each(function ($node,$i) {
+                                    $DetailListC2 = $node->filter('td')->each(function ($node,$i) {
+                                        $ListDetail = $node->filter('td')->html();
+                                        return $ListDetail;
+                                    });
+                                    return $DetailListC2;
+                                });
+                                return $DetailListC1;
+                            });
+                            $JudulAlternatif = $DetailList[0][1][1];
+                            $Rating = $DetailList[0][2][1];
+                            $Votes = $DetailList[0][3][1];
+                            $TotalEpisode = $DetailList[0][5][1];
+                            $HariTayang = $DetailList[0][7][1];
+                            $hrefDetail = self::FilterHreftDetail($DetailList[0][0][1]);
 
-                            $synopsis = $node->filter('.description > p')->text('Default text content');
-                            $Subgenre = $node->filter('.description')->html();
-                            $detGenre = explode("<a", $Subgenre);
+                            $SubStatus = explode("<a",$DetailList[0][4][1]);
+                            $status = '';
+                            for($j=1;$j<count($SubStatus);$j++){
+                                $statusField = substr($SubStatus[$j], strpos($SubStatus[$j], ">") + 1);
+                                $status .= trim(str_replace('</a>','',$statusField));
+                            }
+                            $Subjudul = explode("<a",$DetailList[0][0][1]);
+                            $judul = '';
+                            for($j=1;$j<count($Subjudul);$j++){
+                                $judulField = substr($Subjudul[$j], strpos($Subjudul[$j], ">") + 1);
+                                $judul .= trim(str_replace('</a>','',$judulField)).' ';
+                            }
+                            
+                            $SubgenreFilter = $DetailList[0][8][1];
+                            $detGenre = explode("<a", $SubgenreFilter);
                             $genre = array();
-                            for($j = 1; $j<count($detGenre); $j++){
-                                $genre[] = trim(str_replace("</a>","",substr($detGenre[$j], strpos($detGenre[$j], ">") + 1)));
+                            for($j=1;$j<count($detGenre);$j++){
+                                $genreField = substr($detGenre[$j], strpos($detGenre[$j], ">") + 1);
+                                $genre[] = trim(str_replace('</a>','',$genreField));
                             } 
-                            $ListDetail = $node->filter('.animeInfo > ul')->html();
-                            $SubDetail01 = explode("<b", $ListDetail);
-                            $SubDetail02 = array(
-                                "Judul" => substr($SubDetail01[1], strpos($SubDetail01[1], ":") + 1),
-                                "JudulAlternatif" => substr($SubDetail01[2], strpos($SubDetail01[2], ":") + 1),
-                                "Rating" => substr($SubDetail01[3], strpos($SubDetail01[3], ":") + 1),
-                                "Votes" => substr($SubDetail01[4], strpos($SubDetail01[4], ":") + 1),
-                                "Status" => substr($SubDetail01[5], strpos($SubDetail01[5], ":") + 1),
-                                "TotalEpisode" => substr($SubDetail01[6], strpos($SubDetail01[6], ":") + 1),
-                                "HariTayang" => substr($SubDetail01[7], strpos($SubDetail01[7], ":") + 1),
+                            
+                            $SubDetail = array(
+                                "Judul" => $judul,
+                                "JudulAlternatif" => $JudulAlternatif,
+                                "Rating" => $Rating,
+                                "Votes" => $Votes,
+                                "Status" => $status,
+                                "TotalEpisode"=> $TotalEpisode,
+                                "HariTayang" => $HariTayang,
+
                             );
-                            $href = $node->filter('.col-md-3 > a')->attr("href");
+                            // $href = $node->filter('.attachment-block > a')->attr('href');
                             $SubListDetail = array(
-                                "subDetail" => $SubDetail02,
+                                "subDetail" => $SubDetail,
                                 "synopsis" => $synopsis,
                                 "genre" => $genre,
-                                "hrefEpisode" => $href
+                                "hrefEpisode" => $hrefDetail,
+                                "slugEps" => substr(strrchr($hrefDetail, '/'), 1),
                             );
+                            // dd($SubListDetail);
                             return $SubListDetail; 
                         });
                     }
@@ -227,20 +309,41 @@ class LastUpdateEpsAnimController extends Controller
                     
                 }
                 
-                $dataPage = $crawler->filter('.pagination')->html();
-                $TotalSearchPage = $this->FilterPageEpisode($dataPage);
+                $dataPage = $crawler->filter('.col-md-12')->each(function ($node,$i) {
+                    $DetailPageSpan = $node->filter('.page-numbers')->each(function ($node,$i) {
+                        $hrefPageSpan = $node->filter('.page-numbers')->text('Default text content');
+                        return $hrefPageSpan;
+                    });
+                    $detailPage = [
+                        'pageSpanFilter' => $DetailPageSpan
+                    ];
+                    return $detailPage;
+                });
+                
+                $valLastSpan = 0;
+                foreach($dataPage[0]['pageSpanFilter'] as $key => $valSpanNew){
+                    if(is_numeric($valSpanNew)){
+                        if ($valSpanNew > $valLastSpan) {
+                            $valLastSpan = $valSpanNew;
+                        }
+                    }
+                }
+                $TotalSearchPage = $valLastSpan;
                 if(!is_numeric($TotalSearchPage)){
                     $TotalSearchPage = 1;
                 }
-                
+                // dd($LastUpdateEps);
                 if($PageNumber <= $TotalSearchPage){
                     $A =0;
                     for($i=0;$i < count($SingleEpisode);$i++){
-                        $href = $BASE_URL."".$SingleEpisode[$i]['SingleEpisode'][0]['hrefEpisode'];
+                        $hrefEpisode = $SingleEpisode[$i]['SingleEpisode'][0]['hrefEpisode'];
                         $Image = $LastUpdateEps[0][$i]['image'];
                         $Title = $LastUpdateEps[0][$i]['title'];
                         $TitleAlias = $LastUpdateEps[0][$i]['titleAlias'];
                         $hrefSingleList = $LastUpdateEps[0][$i]['hrefSingleList'];
+                        $slugDetail = $LastUpdateEps[0][$i]['slugDetail'];
+                        $slugEpisode = $SingleEpisode[$i]['SingleEpisode'][0]['slugEps'];
+                        
                         $Title = Converter::__normalizeNameEpsChar($Title,$hrefSingleList);
                         $TitleAlias = Converter::__normalizeNameEpsChar($TitleAlias,$hrefSingleList);
                         
@@ -257,155 +360,138 @@ class LastUpdateEpsAnimController extends Controller
                         $Status = $LastUpdateEps[0][$i]['status'];
                         $Episode = $LastUpdateEps[0][$i]['episode'];
                         $KeyEpisodeEnc=array(
-                            "href" => $href,
-                            "Image" => $Image,
-                            "Title" => $Title,
-                            "Status" => $Status,
+                            "href" => $hrefEpisode,
                             "Episode" => $Episode
                         );
                         
                         $KeyEpisode = EnkripsiData::encodeKeyEpisodeAnime($KeyEpisodeEnc);
-                        
-                        {#save Data to mysql
-                            $Slug = (Str::slug($Title)."-".Str::slug($Episode));
-                            $code = $Slug;
-                            $cdListAnime = Str::slug($Title);
-                            
-                            {#Save to List anime
-                                $codeListAnime['code'] = md5($cdListAnime);
-                                $listAnime = MainModel::getDataListAnime($codeListAnime);
-                                $idListAnime = (empty($listAnime)) ? 0 : $listAnime[0]['id'];
-                                if(empty($listAnime) || $idListAnime == 0){
-                                    
-                                    $slugListAnime = $cdListAnime;
-                                    $KeyListAnimEnc= array(
-                                        "Title"=>trim($Title),
-                                        "Image"=>"",
-                                        "Type"=>"",
-                                        "href"=>$hrefKeyListAnim[$i]
-                                    );
-                                    $KeyListAnim = EnkripsiData::encodeKeyListAnime($KeyListAnimEnc);
-                                    if(empty($listAnime)){
-                                        $Input = array(
-                                            'code' => md5($cdListAnime),
-                                            'slug' => $slugListAnime,
-                                            'title' => $Title,
-                                            'key_list_anime' => $KeyListAnim,
-                                            'name_index' => "#".substr(ucfirst($Title), 0, 1),
-                                            'cron_at' => Carbon::now()->format('Y-m-d H:i:s')
-                                        );
-                                        // $save = MainModel::insertListAnimeMysql($Input);
-                                    }else{
-                                        $conditions['id'] = $idListAnime;
-                                        $Update = array(
-                                            'code' => md5($cdListAnime),
-                                            'slug' => $slugListAnime,
-                                            'title' => $Title,
-                                            'key_list_anime' => $KeyListAnim,
-                                            'name_index' => "#".substr(ucfirst($Title), 0, 1),
-                                            'cron_at' => Carbon::now()->format('Y-m-d H:i:s')
-                                        );
-                                        // $save = MainModel::updateListAnimeMysql($Update,$conditions);
-                                    }
-                                    $codeListAnime['code'] = md5($cdListAnime);
+                        #jika data last update terdapat isi episode maka akan di save
+                        if($slugEpisode){
+                            {#save Data to mysql
+                                $SlugEps = (Str::slug($slugEpisode));
+                                $SlugDet = Str::slug($slugDetail);
+                                $codeListEps['code'] = md5($SlugEps);
+                                $codeDetailAnime['code'] = md5($SlugDet);
+                                $codeListAnime['code'] = md5($SlugDet);
+                                $KeyListAnimEnc= array(
+                                    "Title"=>trim($Title),
+                                    "href"=>$hrefKeyListAnim[$i]
+                                );
+                                $KeyListAnim = EnkripsiData::encodeKeyListAnime($KeyListAnimEnc);
+                                
+                                {#Save to List anime
                                     $listAnime = MainModel::getDataListAnime($codeListAnime);
                                     $idListAnime = (empty($listAnime)) ? 0 : $listAnime[0]['id'];
-                                }
-                            }#End Save to Liat anime
-
-                            {#save to detail anime and list episode
-                                $hrefEpisode = ($SingleEpisode[$i]['SingleEpisode'][0]['hrefEpisode']);
-                                $slugListEps = Converter::__filterCodeEpisodeAnime($hrefEpisode);
-                                $codeListEps['code'] = md5($slugListEps);
-                                $codeDetailAnime['code'] = md5($cdListAnime);
-                                $SlugDetailAnime = $cdListAnime;
-                                $DetailAnime = MainModel::getDataDetailAnime($codeDetailAnime);
-                                $ListEpisodeAnime = MainModel::getDataListEpisodeAnime($codeListEps);
-                                $idDetailAnime = (empty($DetailAnime)) ? 0 : $DetailAnime[0]['id'];
-                                $idListEpisode = (empty($ListEpisodeAnime)) ? 0 : $ListEpisodeAnime[0]['id'];
-                                if(empty($DetailAnime) || $idDetailAnime == 0 || $idListEpisode == 0 || empty($ListEpisodeAnime) ){
-                                    $KeyListAnimEnc= array(
-                                        "Title"=>trim($Title),
-                                        "Image"=>"",
-                                        "Type"=>"",
-                                        "href"=>$hrefKeyListAnim[$i]
-                                    );
-                                    $KeyListAnim = EnkripsiData::encodeKeyListAnime($KeyListAnimEnc);
-                                    $listDataAnime = [
-                                        'params' => [
-                                            'X-API-KEY' => env('X_API_KEY',''),
-                                            'KeyListAnim' => $KeyListAnim
-                                        ]
-                                    ];
-                                    $dataDetailAnime = $this->DetailListAnimeController->DetailListAnim(NULL,$listDataAnime);
-                                    $codeDetailAnime['code'] = md5($cdListAnime);
-                                }
-                                $hrefEpisode = ($SingleEpisode[$i]['SingleEpisode'][0]['hrefEpisode']);
-                                $slugListEps = Converter::__filterCodeEpisodeAnime($hrefEpisode);
-                                $codeListEps['code'] = md5($slugListEps);
-                                $codeDetailAnime['code'] = md5($cdListAnime);
-                                $SlugDetailAnime = $cdListAnime;
-                                $DetailAnime = MainModel::getDataDetailAnime($codeDetailAnime);
-                                $ListEpisodeAnime = MainModel::getDataListEpisodeAnime($codeListEps);
-                                $idDetailAnime = (empty($DetailAnime)) ? 0 : $DetailAnime[0]['id'];
-                                $idListEpisode = (empty($ListEpisodeAnime)) ? 0 : $ListEpisodeAnime[0]['id'];
-                            }#End #save to detail anime and list episode
-
-                            {#save to Data Last Update
-                                $paramCheck['code'] = md5($code);
-                                $checkExist = MainModel::getDataLastUpdate($paramCheck);
-                                if(empty($checkExist)){
-                                    $Input = array(
-                                        'code' => md5($code),
-                                        'slug' => $Slug,
-                                        'id_list_anime' => $idListAnime,
-                                        'id_list_episode' => $idListEpisode,
-                                        'id_detail_anime' => $idDetailAnime,
-                                        "image" => $Image,
-                                        "title" => $Title,
-                                        "title_alias" => $TitleAlias,
-                                        "status" => $Status,
-                                        "episode" => $Episode,
-                                        "keyepisode" => $KeyEpisode,
-                                        'total_search_page' => $TotalSearchPage,
-                                        'page_search' => $PageNumber,
-                                        'cron_at' => Carbon::now()->format('Y-m-d H:i:s')
-                                    );
-                                    $LogSave [] = "Data Save - ".$Slug;
-                                    // $save  = MainModel::insertLastUpdateMysql($Input);
-                                }else{
-                                    $conditions['id'] = $checkExist[0]['id'];
-                                    $Update = array(
-                                        'code' => md5($code),
-                                        'slug' => $Slug,
-                                        'id_list_anime' => $idListAnime,
-                                        'id_list_episode' => $idListEpisode,
-                                        'id_detail_anime' => $idDetailAnime,
-                                        "image" => $Image,
-                                        "title" => $Title,
-                                        "title_alias" => $TitleAlias,
-                                        "status" => $Status,
-                                        "episode" => $Episode,
-                                        "keyepisode" => $KeyEpisode,
-                                        'total_search_page' => $TotalSearchPage,
-                                        'page_search' => $PageNumber,
-                                        'cron_at' => Carbon::now()->format('Y-m-d H:i:s')
-                                    );
-                                    $LogSave [] =  "Data Update - ".$Slug;
-                                    // $save = MainModel::updateLastUpdateMysql($Update,$conditions);
-                                }
-                            }#End save to Data Last Update
-
-                        }#End save Data to mysql   
+                                    if(empty($listAnime) || $idListAnime == 0){
+                                        if(empty($listAnime)){
+                                            $Input = array(
+                                                'code' => md5($SlugDet),
+                                                'slug' => $SlugDet,
+                                                'title' => $Title,
+                                                'key_list_anime' => $KeyListAnim,
+                                                'name_index' => "#".substr(ucfirst($Title), 0, 1),
+                                                'cron_at' => Carbon::now()->format('Y-m-d H:i:s')
+                                            );
+                                            $save = MainModel::insertListAnimeMysql($Input);
+                                        }else{
+                                            $conditions['id'] = $idListAnime;
+                                            $Update = array(
+                                                'code' => md5($SlugDet),
+                                                'slug' => $SlugDet,
+                                                'title' => $Title,
+                                                'key_list_anime' => $KeyListAnim,
+                                                'name_index' => "#".substr(ucfirst($Title), 0, 1),
+                                                'cron_at' => Carbon::now()->format('Y-m-d H:i:s')
+                                            );
+                                            $save = MainModel::updateListAnimeMysql($Update,$conditions);
+                                        }
+                                        $listAnime = MainModel::getDataListAnime($codeListAnime);
+                                        $idListAnime = (empty($listAnime)) ? 0 : $listAnime[0]['id'];
+                                    }
+                                }#End Save to Liat anime
+    
+                                {#save to detail anime and list episode
+                                    
+                                    $DetailAnime = MainModel::getDataDetailAnime($codeDetailAnime);
+                                    $ListEpisodeAnime = MainModel::getDataListEpisodeAnime($codeListEps);
+                                    $idDetailAnime = (empty($DetailAnime)) ? 0 : $DetailAnime[0]['id'];
+                                    $idListEpisode = (empty($ListEpisodeAnime)) ? 0 : $ListEpisodeAnime[0]['id'];
+                                    if(empty($DetailAnime) || $idDetailAnime == 0 || $idListEpisode == 0 || empty($ListEpisodeAnime) ){
+                                        $listDataAnime = [
+                                            'params' => [
+                                                'X-API-KEY' => env('X_API_KEY',''),
+                                                'KeyListAnim' => $KeyListAnim
+                                            ]
+                                        ];
+                                        $dataDetailAnime = $this->DetailListAnimeController->DetailListAnim(NULL,$listDataAnime);
+                                    }
+                                    $DetailAnime = MainModel::getDataDetailAnime($codeDetailAnime);
+                                    $ListEpisodeAnime = MainModel::getDataListEpisodeAnime($codeListEps);
+                                    $idDetailAnime = (empty($DetailAnime)) ? 0 : $DetailAnime[0]['id'];
+                                    $idListEpisode = (empty($ListEpisodeAnime)) ? 0 : $ListEpisodeAnime[0]['id'];
+                                }#End #save to detail anime and list episode
+    
+                                {#save to Data Last Update
+                                    $checkExist = MainModel::getDataLastUpdate($codeListEps);
+                                    if(empty($checkExist)){
+                                        $Input = array(
+                                            'code' => md5($SlugEps),
+                                            'slug' => $SlugEps,
+                                            'id_list_anime' => $idListAnime,
+                                            'id_list_episode' => $idListEpisode,
+                                            'id_detail_anime' => $idDetailAnime,
+                                            "image" => $Image,
+                                            "title" => $Title,
+                                            "title_alias" => $TitleAlias,
+                                            "status" => $Status,
+                                            "episode" => $Episode,
+                                            "keyepisode" => $KeyEpisode,
+                                            'total_search_page' => $TotalSearchPage,
+                                            'page_search' => $PageNumber,
+                                            'cron_at' => Carbon::now()->format('Y-m-d H:i:s')
+                                        );
+                                        $LogSave [] = "Data Save - ".$SlugEps;
+                                        $save  = MainModel::insertLastUpdateMysql($Input);
+                                    }else{
+                                        $conditions['id'] = $checkExist[0]['id'];
+                                        $Update = array(
+                                            'code' => md5($SlugEps),
+                                            'slug' => $SlugEps,
+                                            'id_list_anime' => $idListAnime,
+                                            'id_list_episode' => $idListEpisode,
+                                            'id_detail_anime' => $idDetailAnime,
+                                            "image" => $Image,
+                                            "title" => $Title,
+                                            "title_alias" => $TitleAlias,
+                                            "status" => $Status,
+                                            "episode" => $Episode,
+                                            "keyepisode" => $KeyEpisode,
+                                            'total_search_page' => $TotalSearchPage,
+                                            'page_search' => $PageNumber,
+                                            'cron_at' => Carbon::now()->format('Y-m-d H:i:s')
+                                        );
+                                        $LogSave [] =  "Data Update - ".$SlugEps;
+                                        $save = MainModel::updateLastUpdateMysql($Update,$conditions);
+                                    }
+                                }#End save to Data Last Update
+    
+                            }#End save Data to mysql   
+                        }else{
+                            $LogSave [] =  "Data Episode Last Update Tidak ada di web - ".$Title;
+                            $save = "Di web Kosong - ".$Title;
+                        }
+                        
                     }
                     return ResponseConnected::Success("Last Update Anime", $save, $LogSave, $awal);
                 }else{
                     return ResponseConnected::PageNotFound("Last Update Anime","Page Not Found.", $awal);
                 }
             }else{
+                
                 return ResponseConnected::PageNotFound("Last Update Anime","Page Not Found.", $awal);
             }
         }else{
+            
             return ResponseConnected::PageNotFound("Last Update Anime","Page Not Found.", $awal);
         }
     }

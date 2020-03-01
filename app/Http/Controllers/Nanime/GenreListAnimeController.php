@@ -51,8 +51,8 @@ class GenreListAnimeController extends Controller
         if($Token){
             // try{
                 $ConfigController = new ConfigController();
-                $BASE_URL_LIST=$ConfigController->BASE_URL_ANIME_3;
-                $BASE_URL=$ConfigController->BASE_URL_ANIME_3;
+                $BASE_URL_LIST=$ConfigController->BASE_URL_ANIME_1;
+                $BASE_URL=$ConfigController->BASE_URL_ANIME_1;
                 return $this->GenreListAnimValue($BASE_URL_LIST,$BASE_URL,$awal);
             // }catch(\Exception $e){
             //     return ResponseConnected::InternalServerError("Genre Anime","Internal Server Error",$awal);

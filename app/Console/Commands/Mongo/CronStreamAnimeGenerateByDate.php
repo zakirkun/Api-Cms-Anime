@@ -78,7 +78,7 @@ class CronStreamAnimeGenerateByDate extends Command
                     'id_list_episode' => $listEpsAnime['id'],
                     'show_log' => TRUE
                 ]
-            ];
+            ]; 
             try{
                 $data = $this->StreamAnimeController->generateStreamAnime(NULL,$StreamAnime);
                 echo json_encode($data)."\n\n";

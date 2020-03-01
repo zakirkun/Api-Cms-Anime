@@ -8,7 +8,7 @@ use \GuzzleHttp\Client;
 use \Goutte\Client as GoutteClient; 
 use \Tuna\CloudflareMiddleware;
 use \GuzzleHttp\Cookie\FileCookieJar;
-use \GuzzleHttp\Psr7;
+use \GuzzleHttp\Psr7; 
 use \Carbon\Carbon;
 use \Sunra\PhpSimple\HtmlDomParser;
 use Illuminate\Support\Str;

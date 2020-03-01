@@ -68,7 +68,7 @@ class CronLastUpdateGenerateByDate extends Command
             'params' => [
                 'start_date' => $startDate,
                 'end_date' => $EndDate,
-                'is_update' => $isUpdate,
+                'is_updated' => $isUpdate,
                 'show_log' => TRUE
             ]
         ];

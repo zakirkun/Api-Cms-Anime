@@ -86,6 +86,7 @@ class CronStreamAnimeGenerateByDate extends Command
                 echo json_encode($data)."\n\n";
                 $i++;
             }catch(\Exception $e){
+                echo "Not Complete episode = ".$listEpsAnime['episode'].' id ='.$listEpsAnime['id'];
                 $dataNotSave[] = array(
                     'Episode' => $listEpsAnime['episode'],
                     'KeyEpisode' => $listEpsAnime['key_episode'],

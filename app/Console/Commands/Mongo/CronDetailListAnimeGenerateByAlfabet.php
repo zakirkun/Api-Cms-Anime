@@ -25,7 +25,7 @@ class CronDetailListAnimeGenerateByAlfabet extends Command
      *
      * @var string
      */
-    protected $signature = 'CronDetailListAnimeGenerateByAlfabetMG:DetailListAnimeGenerateByAlfabetMGV1  {start_by_index} {end_by_index} {all_list}';
+    protected $signature = 'CronDetailListAnimeGenerateByAlfabetMG:DetailListAnimeGenerateByAlfabetMGV1  {start_by_index} {end_by_index}';
 
     /**
      * The console command description.
@@ -53,7 +53,6 @@ class CronDetailListAnimeGenerateByAlfabet extends Command
     public function handle(){
         $startByIndex = $this->argument('start_by_index');
         $EndByIndex = $this->argument('end_by_index');
-        // $showLog = filter_var($this->argument('show_log'), FILTER_VALIDATE_BOOLEAN);
 
         $path_log = base_path('storage/logs/generate/mongo');
         $filename = $path_log.'/DetailListAnimeGenerateByAlfabetV1.json';
@@ -82,8 +81,17 @@ class CronDetailListAnimeGenerateByAlfabet extends Command
             try{
                 $data = $this->DetailListAnimeController->generateDetailAnime(NULL,$listDataAnime);
                 echo json_encode($data)."\n\n";
-                
-                $i++;
+                if($data['success'] == 0){
+                    $dataNotSave[] = array(
+                        'Episode' => $listEpsAnime['episode'],
+                        'id' => $listEpsAnime['id'],
+                        'id_detail_anime' => $listEpsAnime['id_detail_anime'],
+                        'id_list_anime' => $listEpsAnime['id_list_anime']
+                    );
+                    $status = 'Not Complete';
+                }else{
+                    $i++;
+                }
             }catch(\Exception $e){
                 $dataNotSave[] = array(
                     'Title' => $listAnime['title'],

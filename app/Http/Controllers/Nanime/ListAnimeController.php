@@ -48,11 +48,12 @@ class ListAnimeController extends Controller
         $generateKey = bin2hex(random_bytes(16));
         $Users = MainModel::getUser($ApiKey);
         $Token = $Users[0]['token'];
+        // $Token = TRUE;
         if($Token){
             // try{
                 $ConfigController = new ConfigController();
-                $BASE_URL_LIST=$ConfigController->BASE_URL_LIST_ANIME_1;
-                $BASE_URL=$ConfigController->BASE_URL_ANIME_1;
+                $BASE_URL_LIST = $ConfigController->BASE_URL_LIST_ANIME_1;
+                $BASE_URL = $ConfigController->BASE_URL_ANIME_1;
                 return $this->ListAnimeValue($BASE_URL_LIST,$BASE_URL,$awal);
             // }catch(\Exception $e){
             //     return ResponseConnected::InternalServerError("List Anime","Internal Server Error",$awal);
@@ -73,101 +74,70 @@ class ListAnimeController extends Controller
         if($status == 200){
             // Get the latest post in this category and display the titles
             $nodeValues = $crawler->filter('.col-md-7')->each(function ($node,$i) {
-                $List= $node->filter('.table-responsive')->each(function ($nodel,$i) {
-                    $NameIndex =$nodel->filter('.col-md-12')->text('Default text content');
-                    
-                    $SubList= $nodel->filter('.col-md-6')->each(function ($nodel,$i) {
+                $List= $node->filter('.box-body')->each(function ($nodel,$i) {
+                    $SubList = $nodel->filter('.col-md-6')->each(function ($nodel,$i) {
                         $Title = $nodel->filter('a')->text('Default text content');
-                        $href = $nodel->filter('a')->attr('href');
-                        $deleteEmail = ['[','email','protected',']',','];
-                        // if (stripos((Converter::__normalizeSummary($Title)),'[email') !== false
-                        // || stripos($Title,'&') || stripos($Title,';')){
-                        //     $Title = substr($href, strrpos($href, '/' )+1);
-                        //     $Title = str_replace("-"," ",$Title);
-                        // }else{
-                        //     $Title = $Title;
-                        // }
+                        $hrefDetail = $nodel->filter('a')->attr('href');
+                        $slugDetail = substr(strrchr($hrefDetail, '/'), 1);
+                        $nameIndex = substr(trim($Title), 0, 1);
+                        
                         $item = [
                             'TitleAlias' => $Title,
-                            'Title'=>$Title,
-                            'href'=>$href,
-                            'type'=>""
+                            'Title' => $Title,
+                            'href' => $hrefDetail,
+                            "slugDetail" => $slugDetail,
+                            'nameIndex' => $nameIndex,
+                            'type'=> ""
                         ];
                         return $item;
                     });
                     
                     $items = [
                         'List'=>$SubList,
-                        'NameIndex'=>$NameIndex
+                        // 'NameIndex'=>$NameIndex
                     ];
                     
                     return $items;
                 });
                 return $List;
             });
-            
             if($nodeValues){
                 $ListAnime = array(); 
-                $NameIndex= array();
+                $NameIndex = array();
+                
                 foreach($nodeValues[0] as $item){
-                    $NameIndexVal = trim($item['NameIndex']);
+                    // $NameIndexVal = trim($item['NameIndex']);
                     $List = $item['List'];
                     $ListSubIndex = array();
                     foreach($List as $List){
                         $filter = substr(preg_replace('/(\v|\s)+/', ' ', $List['Title']), 0, 2);
                         $Title = $List['Title'];
                         $TitleAlias = $List['TitleAlias'];
+                        $SlugDet = $List['slugDetail'];
+                        $NameIndexVal = $List['nameIndex'];
                         $href = $List['href'];
                         $Title = Converter::__normalizeTitle($Title,$href);
                         $TitleAlias = Converter::__normalizeTitle($TitleAlias,$href);
                         
                         $Type = $List['type'];
-                        if($NameIndexVal=='##'){
-                            if(!ctype_alpha($filter) || ctype_alpha($filter)){
-                                $KeyListAnimEnc = array(
-                                    "Title"=>trim($Title),
-                                    "Image"=>"",
-                                    "Type"=>trim($Type),
-                                    "href"=>$BASE_URL."".$List['href']
-                                );
-                                
-                                $KeyListAnim = EnkripsiData::encodeKeyListAnime($KeyListAnimEnc);
-                                
-                                $ListSubIndex[] = array(
-                                    "Title"=>trim($Title),
-                                    "Image"=>"",
-                                    "Type"=>trim($Type),
-                                    "KeyListAnim"=>$KeyListAnim
-                                );
-                            }
-                        }else{
-                                $KeyListAnimEnc = array(
-                                    "Title"=>trim($Title),
-                                    "Image"=>"",
-                                    "Type"=>trim($Type),
-                                    "href"=>$BASE_URL."".$List['href']
-                                );
-                                
-                                $KeyListAnim = EnkripsiData::encodeKeyListAnime($KeyListAnimEnc);
-                                
-                                $ListSubIndex[] = array(
-                                    "Title"=>trim($Title),
-                                    "Image"=>"",
-                                    "Type"=>trim($Type),
-                                    "KeyListAnim"=>$KeyListAnim
-                                );
-                            
-                        }
-                        $Slug = Str::slug($Title);
-                        $code = $Slug;
+                        $NameIndexVal = !ctype_alpha($NameIndexVal) ? '##' : '#'.$NameIndexVal;
                         
+                        $KeyListAnimEnc = array(
+                            "Title"=> trim($Title),
+                            "Image"=>"",
+                            "Type"=> trim($Type),
+                            "href"=> $List['href']
+                        );
+                        $KeyListAnim = EnkripsiData::encodeKeyListAnime($KeyListAnimEnc);
+                        
+                        $SlugDet = Str::slug($SlugDet);
                         {#Save To List Anime
-                            $paramCheck['code'] = md5($code);
+                            $paramCheck['code'] = md5($SlugDet);
                             $checkExist = MainModel::getDataListAnime($paramCheck);
                             if(empty($checkExist)){
                                 $Input = array(
-                                    'code' => md5($code),
-                                    'slug' => $Slug,
+                                    'code' => md5($SlugDet),
+                                    'slug' => $SlugDet,
                                     'title' => $Title,
                                     'key_list_anime' => $KeyListAnim,
                                     'name_index' => $NameIndexVal,
@@ -178,8 +148,8 @@ class ListAnimeController extends Controller
                             }else{
                                 $conditions['id'] = $checkExist[0]['id'];
                                 $Update = array(
-                                    'code' => md5($code),
-                                    'slug' => $Slug,
+                                    'code' => md5($SlugDet),
+                                    'slug' => $SlugDet,
                                     'title' => $Title,
                                     'key_list_anime' => $KeyListAnim,
                                     'name_index' => $NameIndexVal,

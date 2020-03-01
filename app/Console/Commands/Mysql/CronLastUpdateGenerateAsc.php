@@ -18,21 +18,21 @@ use Carbon\Carbon;
 use App\Models\V1\MainModel as MainModel;
 
 
-class CronLastUpdateGenerate extends Command
+class CronLastUpdateGenerateAsc extends Command
 {
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'CronLastUpdateGenerate:CronLastUpdateGenerateV1  {page_number_first} {page_number_end} {all_list}';
+    protected $signature = 'CronLastUpdateGenerateAsc:CronLastUpdateGenerateAscV1  {page_number_first} {page_number_end} {all_list}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Cron untuk generate data CronLastUpdateGenerateV1';
+    protected $description = 'Cron untuk generate data CronLastUpdateGenerateAscV1';
 
     /**
      * Create a new command instance.
@@ -57,7 +57,7 @@ class CronLastUpdateGenerate extends Command
         // $showLog = filter_var($this->argument('show_log'), FILTER_VALIDATE_BOOLEAN);
 
         $path_log = base_path('storage/logs/generate/mysql');
-        $filename = $path_log.'/CronLastUpdateGenerateV1.json';
+        $filename = $path_log.'/CronLastUpdateGenerateAscV1.json';
         #get file log last date generate
         if(file_exists($filename)) $content = file_get_contents($filename);
         
@@ -106,7 +106,7 @@ class CronLastUpdateGenerate extends Command
                 }catch(\Exception $e){
                     echo "Not Save Page Number :".$i."\n\n";
                     $dataNotSave[] = array(
-                        'PageNumber' => $pageNumber,
+                        'PageNumber' => $i,
                     );
                     $status = 'Not Complete';
                     $notSaveHit++;

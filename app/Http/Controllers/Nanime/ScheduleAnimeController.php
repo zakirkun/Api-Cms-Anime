@@ -36,7 +36,7 @@ class ScheduleAnimeController extends Controller
             // try{
                 $ConfigController = new ConfigController();
                 $BASE_URL=$ConfigController->BASE_URL_ANIME_1;
-                $BASE_URL_LIST=$BASE_URL."/page/jadwal-rilis/";
+                $BASE_URL_LIST=$BASE_URL."/jadwal-rilis";
                 return $this->ScheduleAnimeValue($BASE_URL_LIST,$BASE_URL,$awal);
             // }catch(\Exception $e){
             //      return ResponseConnected::InternalServerError("Schedule Anime","Internal Server Error",$awal);
@@ -59,43 +59,49 @@ class ScheduleAnimeController extends Controller
         
         if($status == 200){
             // Get the latest post in this category and display the titles
-            $nodeValues = $crawler->filter('.panel-default')->each(function ($node,$i) {
-                $List= $node->filter('.collapse')->each(function ($node,$i) {
-                    $SubList= $node->filter('.col-md-3 ')->each(function ($node,$i) {
-                        $title = $node->filter('.post-title')->attr('title');
-                        $titleAlias = $node->filter('.post-title')->text('Default text content');
-                        $href =$node->filter('a')->attr('href');
-                        $image=$node->filter('img')->attr('src');
+            $nodeValues = $crawler->filter('.col-md-7')->each(function ($node,$i) {
+                $List = $node->filter('.box-body')->each(function ($node,$i) {
+                    $SubList = $node->filter('a')->each(function ($nodel,$i) {
+                        $Title = $nodel->filter('a')->text('Default text content');
+                        $nameDay = $nodel->filter('h3')->text('Default text content');
+                        $hrefDetail = $nodel->filter('a')->attr('href');
+                        $slugDetail = substr(strrchr($hrefDetail, '/'), 1);
+                        $nameIndex = substr(trim($Title), 0, 1);
+                        // $nameDay = $node->filter('h3 > a')->text('Default text content');
                         $item = [
-                            'TitleAlias' => $titleAlias,
-                            'href' => $href,
-                            'title' => $title,
-                            'image' => $image
+                            'TitleAlias' => $Title,
+                            'href' => $hrefDetail,
+                            'title' => $Title,
+                            "slugDetail" => $slugDetail,
+                            // "nameDay" => $nameDay,
                         ];
                         return $item;
                     });
                     
+                    dd($SubList);
                     return $SubList;
                 });
-                    $NameDay =$node->filter('.panel-heading')->text('Default text content');
+                dd($List);
+                    $NameDay = $node->filter('h3 > a')->text('Default text content');
+
                     $items = [
-                        'List'=>$List,
-                        'NameDay'=>$NameDay
+                        'List' => $List,
+                        'NameDay' => $NameDay
                     ];
                     return $items;
             });
+            
 
             if($nodeValues){
                 $ScheduleAnime=array();
                 for($i=0;$i<7;$i++){
-                    $NameDay=($nodeValues[$i]['NameDay']);
-                    $ListSubIndex=array();
-                    for($j=0;$j<count($nodeValues[$i]['List'][0]);$j++){
+                    $NameDay = ($nodeValues[$i]['NameDay']);
+                    $ListSubIndex = array();
+                    for($j = 0; $j < count($nodeValues[$i]['List'][0]); $j++){
                         $href = $BASE_URL."".$nodeValues[$i]['List'][0][$j]['href'];
-                        $KeyListAnimEnc= array(
-                            "Title"=>$nodeValues[$i]['List'][0][$j]['title'],
-                            "Image"=>$nodeValues[$i]['List'][0][$j]['image'],
-                            "href"=>$href,
+                        $KeyListAnimEnc = array(
+                            "Title" => $nodeValues[$i]['List'][0][$j]['title'],
+                            "href" => $href,
                         );
                         $KeyListAnim = EnkripsiData::encodeKeyListAnime($KeyListAnimEnc);
                         $Image = $nodeValues[$i]['List'][0][$j]['image'];
@@ -117,8 +123,6 @@ class ScheduleAnimeController extends Controller
                                     $slugListAnime = $Slug;
                                     $KeyListAnimEnc= array(
                                         "Title"=>trim($Title),
-                                        "Image"=>"",
-                                        "Type"=>"",
                                         "href"=>$href
                                     );
                                     $KeyListAnim = EnkripsiData::encodeKeyListAnime($KeyListAnimEnc);

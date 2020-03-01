@@ -29,6 +29,7 @@ $app->configure('database');
 $app->configure('general_config');
 $app->configure('mongo');
 
+
 /*
 |--------------------------------------------------------------------------
 | Register Container Bindings
