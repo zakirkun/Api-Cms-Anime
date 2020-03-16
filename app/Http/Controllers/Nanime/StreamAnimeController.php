@@ -61,10 +61,10 @@ class StreamAnimeController extends Controller
                 $idListEpisode_ = (isset($params['params']['idListEpisode']) ? ($params['params']['idListEpisode']) : 0);
             }
             $Users = MainModel::getUser($ApiKey);
-            $Token = $Users[0]['token'];
+            // $Token = $Users[0]['token'];
             $NextEpisode = "";
             $PrevEpisode = "";
-            if($Token){
+            if(!empty($Users)){
                 // try{
                     $findCode = strstr($KeyEpisode,'QtYWL');
                     $KeyListDecode = EnkripsiData::DecodeKeyListEps($KeyEpisode);
@@ -383,7 +383,6 @@ class StreamAnimeController extends Controller
                         'name_server' => $NameDowloadServer,
                         'link_download' => $hrefDownload,
                         "id_stream_anime" => $idStreamAnime,
-                        'cron_at' => Carbon::now()->format('Y-m-d H:i:s')
                     );
                     $LogSave [] = "Data Download Update - ".$NameDowloadServer."-".$Title;
                     $save = MainModel::updateDownloadStreamMysql($Update,$conditions);

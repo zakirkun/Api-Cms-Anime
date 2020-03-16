@@ -93,6 +93,7 @@ class ResponseConnected
                 "Message" =>array(
                     "Type" => "Info",
                     "ShortText" => "Invalid Key",
+                    "Speed" => self::SpeedResponse($awal),
                     "Code" => 401
                 ),
                 "Body"=> array()
@@ -111,6 +112,7 @@ class ResponseConnected
                 "Message" => array(
                     "Type" => "Info",
                     "ShortText" => "Invalid Key Pagination",
+                    "Speed" => self::SpeedResponse($awal),
                     "Code" => 401
                 ),
                 "Body"=> array(

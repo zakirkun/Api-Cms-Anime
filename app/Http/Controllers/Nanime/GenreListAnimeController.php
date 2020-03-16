@@ -47,8 +47,8 @@ class GenreListAnimeController extends Controller
             $ApiKey = (isset($params['params']['X-API-KEY']) ? ($params['params']['X-API-KEY']) : '');
         }
         $Users = MainModel::getUser($ApiKey);
-        $Token = $Users[0]['token'];
-        if($Token){
+        // $Token = $Users[0]['token'];
+        if(!empty($Users)){
             // try{
                 $ConfigController = new ConfigController();
                 $BASE_URL_LIST=$ConfigController->BASE_URL_ANIME_1;

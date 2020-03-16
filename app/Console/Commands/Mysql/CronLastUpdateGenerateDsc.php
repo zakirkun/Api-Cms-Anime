@@ -65,6 +65,7 @@ class CronLastUpdateGenerateDsc extends Command
         $status = "Complete";
         $TotalHit = 1;
         $notSaveHit = 0;
+        $hit = 0;
         $dataNotSave = array();
         if($allList){
             $param = [
@@ -90,8 +91,9 @@ class CronLastUpdateGenerateDsc extends Command
                     $status = 'Not Complete';
                     $notSaveHit++;
                 }
+                $hit++;
             }
-            $TotDataSave = ($i - $notSaveHit);
+            $TotDataSave = ($hit - $notSaveHit);
         }else{
             for($i = $pageNumberFirst ; $i >= $pageNumberEnd ;$i--){
                 $lastUpdate = [
@@ -111,11 +113,12 @@ class CronLastUpdateGenerateDsc extends Command
                     $status = 'Not Complete';
                     $notSaveHit++;
                 }
+                $hit++;
             }
-            $TotDataSave = $notSaveHit;
+            $TotDataSave = ($hit - $notSaveHit);
         }
 
-        $response['Total_hit'] = $TotalHit;
+        $response['Total_hit'] = $hit;
         $response['Hit_date'] =  Carbon::now()->format(DATE_ATOM);
         $response['Total_Data_Save'] = $TotDataSave;
         $response['Total_Data_Not_Save'] = $notSaveHit;

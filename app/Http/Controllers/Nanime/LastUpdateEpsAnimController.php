@@ -55,16 +55,16 @@ class LastUpdateEpsAnimController extends Controller
     public function LastUpdateAnime(Request $request = NULL, $params = NULL){
         $awal = microtime(true);        
         if(!empty($request) || $request != NULL){
-            $ApiKey=$request->header("X-API-KEY");
-            $PageNumber=$request->header("PageNumber") ? $request->header("PageNumber") : 1;
+            $ApiKey = $request->header("X-API-KEY");
+            $PageNumber = $request->header("PageNumber") ? $request->header("PageNumber") : 1;
         }
         if(!empty($params) || $params != NULL){
             $ApiKey = (isset($params['params']['X-API-KEY']) ? ($params['params']['X-API-KEY']) : '');
             $PageNumber = (isset($params['params']['PageNumber'])? ($params['params']['PageNumber']) : 1);
         }
         $Users = MainModel::getUser($ApiKey);
-        $Token = $Users[0]['token'];
-        if($Token){
+        // $Token = $Users[0]['token'];
+        if(!empty($Users)){
             // try{
                 $ConfigController = new ConfigController();
                 $BASE_URL = $ConfigController->BASE_URL_ANIME_1;
@@ -80,7 +80,7 @@ class LastUpdateEpsAnimController extends Controller
             
         }else{
             
-            return ResponseConnected::InvalidToken("Last Update Anime","Page Not Found.", $awal);
+            return ResponseConnected::InvalidToken("Last Update Anime","Invalid Token", $awal);
         }
     }
 

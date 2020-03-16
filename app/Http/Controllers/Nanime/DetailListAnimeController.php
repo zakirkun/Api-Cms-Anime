@@ -48,9 +48,9 @@ class DetailListAnimeController extends Controller
             $KeyListAnim = (isset($params['params']['KeyListAnim']) ? ($params['params']['KeyListAnim']) : '');
         }
         $Users = MainModel::getUser($ApiKey);
-        $Token = $Users[0]['token'];
+        // $Token = $Users[0]['token'];
         
-        if($Token){
+        if(!empty($Users)){
             // try{
                 $findCode = strstr($KeyListAnim,'QWTyu');
                 $KeyListDecode = EnkripsiData::DecodeKeylistAnime($KeyListAnim);

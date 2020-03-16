@@ -35,7 +35,13 @@ class Kernel extends ConsoleKernel
         '\App\Console\Commands\Mysql\CronStreamAnimeGenerateByAscID',
         '\App\Console\Commands\Mysql\CronTrendingweekGenerate',
         '\App\Console\Commands\Mysql\CronGenreAnimeGenerate',
-        '\App\Console\Commands\Mysql\CronScheduleAnimeGenerate',
+        '\App\Console\Commands\Mysql\CronConvertAdflyDownloadByDate',
+        '\App\Console\Commands\Mysql\CronDeleteConvertAdflyDownloadByid',
+        '\App\Console\Commands\Mysql\CronConvertAdflyDownloadById',
+
+        #NO DATABAse
+        '\App\Console\Commands\Cloud\CronDeleteConvertAdflyDownloadByGroup',
+        
         
     ];
 
@@ -134,7 +140,7 @@ class Kernel extends ConsoleKernel
             }
     
             if($config['Cron_StreamAnime_GenerateByDate']) {
-                $schedule->command('CronStreamAnimeGenerateByDate:CronStreamAnimeGenerateByDateV1 ')
+                $schedule->command('CronStreamAnimeGenerateByDate:CronStreamAnimeGenerateByDateV1')
                     ->everyMinute() #setiap menit
                     ->appendOutputTo('/tmp/Cron_StreamAnime_GenerateByDate.log');
             }
@@ -162,12 +168,32 @@ class Kernel extends ConsoleKernel
                     ->everyMinute() #setiap menit
                     ->appendOutputTo('/tmp/Cron_GenreAnime_Generate.log');
             }
-    
-            if($config['Cron_ScheduleAnime_Generate']) {
-                $schedule->command('CronScheduleAnimeGenerate:CronScheduleAnimeGenerateV1')
+
+            if($config['Cron_ConvertAdflyDownload_GenerateByDate']) {
+                $schedule->command('CronConvertAdflyDownloadByDate:CronConvertAdflyDownloadByDateV1')
                     ->everyMinute() #setiap menit
-                    ->appendOutputTo('/tmp/Cron_ScheduleAnime_Generate.log');
+                    ->appendOutputTo('/tmp/Cron_ConvertAdflyDownload_GenerateByDate.log');
             }
+
+            if($config['Cron_DeleteConvertAdflyDownload_GenerateByid']) {
+                $schedule->command('CronDeleteConvertAdflyDownloadByid:CronDeleteConvertAdflyDownloadByidV1')
+                    ->everyMinute() #setiap menit
+                    ->appendOutputTo('/tmp/Cron_DeleteConvertAdflyDownload_GenerateByid.log');
+            }
+
+            if($config['Cron_ConvertAdflyDownload_GenerateByid']) {
+                $schedule->command('CronConvertAdflyDownloadById:CronConvertAdflyDownloadByIdV1')
+                    ->everyMinute() #setiap menit
+                    ->appendOutputTo('/tmp/Cron_ConvertAdflyDownload_GenerateByid.log');
+            }
+
+            #NO DATABASE
+            if($config['Cron_DeleteConvertAdflyDownload_GenerateByGroup']) {
+                $schedule->command('CronDeleteConvertAdflyDownloadByGroup:CronDeleteConvertAdflyDownloadByGroupV1')
+                    ->everyMinute() #setiap menit
+                    ->appendOutputTo('/tmp/Cron_DeleteConvertAdflyDownload_GenerateByGroup.log');
+            }
+    
         }#END MYSQL
         
     }

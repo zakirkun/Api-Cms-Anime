@@ -12,6 +12,12 @@ $config['Cron_StreamAnime_GenerateByAscID'] = env('CRON_STREAMANIME_GENERATEBYAS
 $config['Cron_Trendingweek_Generate'] = env('CRON_TRENDINGWEEK_GENERATE_V1', FALSE);
 $config['Cron_GenreAnime_Generate'] = env('CRON_GENREANIME_GENERATE_V1', FALSE);
 $config['Cron_ScheduleAnime_Generate'] = env('CRON_SCHEDULEANIME_GENERATE_V1', FALSE);
+$config['Cron_ConvertAdflyDownload_GenerateByDate'] = env('CRON_CONVERTADFLYDOWNLOAD_GENERATE_V1', FALSE);
+$config['Cron_DeleteConvertAdflyDownload_GenerateByid'] = env('CRON_DELETECONVERTADFLYDOWNLOAD_GENERATEBYID_V1', FALSE);
+$config['Cron_ConvertAdflyDownload_GenerateByid'] = env('CRON_CONVERTADFLYDOWNLOAD_GENERATEBYID_V1', FALSE);
+
+#No Database
+$config['Cron_DeleteConvertAdflyDownload_GenerateByGroup'] = env('CRON_DELETECONVERTADFLYDOWNLOAD_GENERATEBYGROUP_V1', FALSE);
 
 #MONGO
 $config['Cron_DetailListAnimeGenerateByDateMG'] = env('CRON_DETAIL_LIST_ANIME_GENERATE_BYDATE_MGV1', FALSE);

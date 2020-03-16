@@ -47,9 +47,9 @@ class ListAnimeController extends Controller
         }
         $generateKey = bin2hex(random_bytes(16));
         $Users = MainModel::getUser($ApiKey);
-        $Token = $Users[0]['token'];
+        // $Token = $Users[0]['token'];
         // $Token = TRUE;
-        if($Token){
+        if(!empty($Users)){
             // try{
                 $ConfigController = new ConfigController();
                 $BASE_URL_LIST = $ConfigController->BASE_URL_LIST_ANIME_1;

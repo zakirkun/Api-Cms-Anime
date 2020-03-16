@@ -15,8 +15,12 @@ $router->group(['prefix' => 'N/1', 'namespace' => 'Nanime'], function () use ($r
     $router->post('TrandingWeekAnime', 'TrandingWeekAnimeController@TrandingWeekAnime');
         $router->get('TrandingWeekAnime', 'TrandingWeekAnimeController@TrandingWeekAnime');
     $router->post('StreamAnime', 'StreamAnimeController@StreamAnime');
-    $router->post('ScheduleAnime', 'ScheduleAnimeController@ScheduleAnime');
-        $router->get('ScheduleAnime', 'ScheduleAnimeController@ScheduleAnime');
+    $router->post('AdflyDownload', 'ConvertAdflyDownload@AdflyDownload');
+    $router->post('DeleteAdflyDownload', 'ConvertAdflyDownload@DeleteAdflyDownload');
+
+    #No With Database just cloud
+    $router->post('DeleteAdflyDownloadByGroup', 'ConvertAdflyDownload@DeleteAdflyDownloadbyGroup');
+    
 
     // generate to mongo
     $router->post('ListAnimeGenerate', 'ListAnimeController@ListAnimeGenerate');

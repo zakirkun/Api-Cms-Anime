@@ -1072,6 +1072,10 @@ class MainModel extends Model
         $code = (isset($params['code']) ? $params['code'] : '');
         $id_stream_anime = (isset($params['id_stream_anime']) ? $params['id_stream_anime'] : '');
         $ID = (isset($params['id']) ? $params['id'] : '');
+        $startDate = (isset($params['start_date']) ? $params['start_date'] : '');
+        $endDate = (isset($params['end_date']) ? $params['end_date'] : '');
+        $isUpdated = (isset($params['is_updated']) ? $params['is_updated'] : FALSE); #untuk data terbaru 2 jam terakhir
+
         $tabel_name = 'download_stream';
         ini_set('memory_limit','1024M');
         $query = DB::connection('application_db')
@@ -1080,6 +1084,14 @@ class MainModel extends Model
         if(!empty($code)) $query = $query->where('code', '=', $code);
         if(!empty($id_stream_anime)) $query = $query->where('id_stream_anime', '=', $id_stream_anime);
         if(!empty($ID)) $query = $query->where('id', '=', $ID);
+        if($isUpdated){ #ambil data update atau terbaru
+            $startDate = date('Y-m-d');
+            $endDate = date("Y-m-d", strtotime('tomorrow'));
+            $query = $query->whereBetween('cron_at', [$startDate, $endDate]);
+        }else{
+            if(!empty($startDate) && empty($endDate)) $query = $query->where('cron_at', '>=', $startDate);
+            if($startDate && $endDate) $query = $query->whereBetween('cron_at', [$startDate, $endDate]);
+        }
         $query = $query->get();
 
         $result = [];
@@ -1145,5 +1157,20 @@ class MainModel extends Model
         return $data;
     }
     #================ End updateDownloadStreamMysql ==================================
+    public static function getDataNotSaveDownloadStream($params = []){        
+        $idAdfly = (isset($params['id_adfly']) ? $params['id_adfly'] : '');
+        $tabel_name = 'download_stream';
+        ini_set('memory_limit','1024M');
+        $query = DB::connection('application_db')
+            ->table($tabel_name);
+        
+        if(!empty($idAdfly)) $query = $query->where('id_adfly', '=', '0');
+        $query = $query->get();
+
+        $result = [];
+        if(count($query)) $result = collect($query)->map(function($x){ return (array) $x; })->toArray();
+        return $result;
+    }
+    
 
 }
