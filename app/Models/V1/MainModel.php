@@ -1074,6 +1074,7 @@ class MainModel extends Model
         $ID = (isset($params['id']) ? $params['id'] : '');
         $startDate = (isset($params['start_date']) ? $params['start_date'] : '');
         $endDate = (isset($params['end_date']) ? $params['end_date'] : '');
+        $idAdfly = (isset($params['id_adfly']) ? $params['id_adfly'] : FALSE); #untuk data terbaru 2 jam terakhir
         $isUpdated = (isset($params['is_updated']) ? $params['is_updated'] : FALSE); #untuk data terbaru 2 jam terakhir
 
         $tabel_name = 'download_stream';
@@ -1082,6 +1083,7 @@ class MainModel extends Model
             ->table($tabel_name);
         
         if(!empty($code)) $query = $query->where('code', '=', $code);
+        if($idAdfly) $query = $query->where('id_adfly', '=', 0);
         if(!empty($id_stream_anime)) $query = $query->where('id_stream_anime', '=', $id_stream_anime);
         if(!empty($ID)) $query = $query->where('id', '=', $ID);
         if($isUpdated){ #ambil data update atau terbaru

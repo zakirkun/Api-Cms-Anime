@@ -64,18 +64,19 @@ class CronConvertAdflyDownloadByDate extends Command
         if(file_exists($filename)) $content = file_get_contents($filename);
         
         if($isUpdate){
-            $startDate = date('Y-m-d');
+            $startDate = '';
             $EndDate = '';
+            $idAdfly = TRUE;
         }
 
         $response = [];
         $param = [
             'code' => '',
             'start_date' => $startDate,
-            'end_date' => $EndDate
+            'end_date' => $EndDate,
+            'id_adfly' => $idAdfly,
         ];
         $getDownloadStream = MainModel::getDownloadStream($param);
-        
         $status = "Complete";
         $j = 0;
         $dataNotSave = array();
@@ -93,11 +94,11 @@ class CronConvertAdflyDownloadByDate extends Command
                 $j++;
                 
             }catch(\Exception $e){
-                echo "Not Complete id_downlod = ".$getDownload['id']."\n\n";
+                echo "Not Complete id_downlod = ".$getDownloadStream[$i]['id']."\n\n";
                 $dataNotSave[] = array(
-                    'id_stream_anime' => $getDownload['id_stream_anime'],
-                    'code' => $getDownload['code'],
-                    'id' => $getDownload['id']
+                    'id_stream_anime' => $getDownloadStream[$i]['id_stream_anime'],
+                    'code' => $getDownloadStream[$i]['code'],
+                    'id' => $getDownloadStream[$i]['id']
                 );
                 $status = 'Not Complete';
             }

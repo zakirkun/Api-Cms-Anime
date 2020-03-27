@@ -444,7 +444,10 @@ class StreamAnimeController extends Controller
                         'id_stream_anime' => $getStreamData['id']
                     ];
                     $getServerStream = MainModel::getServerStream($param);
+                    $getDownloadStream = MainModel::getDownloadStream($param);
+                    
                     $dataServer = array();
+                    $adflyDownload = array();
                     foreach($getServerStream as $getServerStream){
                         $dataServer[] = array(
                             'id_server' => $getServerStream['id'],
@@ -452,30 +455,45 @@ class StreamAnimeController extends Controller
                             'iframe_src' => $getServerStream['iframe_src']
                         );
                     }
-                    $MappingMongo = array(
-                        'id_auto' => $getStreamData['id'].'-streamAnime',
-                        'id_stream_anime' => $getStreamData['id'],
-                        'id_list_episode' => $getStreamData['id_list_episode'],
-                        'id_detail_anime' => $getStreamData['id_detail_anime'],
-                        'id_list_anime' => $getStreamData['id_list_anime'],
-                        'source_type' => 'stream-Anime',
-                        'code' => $getStreamData['code'],
-                        'slug' => $getStreamData['slug'],
-                        'title' => Converter::__normalizeSummary($getStreamData['title']),
-                        'synopsis' => $getStreamData['synopsis'],
-                        'data_server' => $dataServer,
-                        'image' => $getStreamData['image'],
-                        'status' => $getStreamData['status'],
-                        'rating' => $getStreamData['rating'],
-                        'episode_total' => $getStreamData['episode_total'],
-                        'genre' => explode('|',substr(trim($getStreamData['genre']),0,-1)),
-                        'keyword' => explode('-',$getStreamData['slug']),
-                        'meta_title' => (Converter::__normalizeSummary(strtolower($getStreamData['title']))),
-                        'meta_keywords' => explode('-',$getStreamData['slug']),
-                        'meta_tags' => explode('-',$getStreamData['slug']),
-                        'cron_at' => $getStreamData['cron_at']
-                    );
-                    $updateMongo = MainModelMongo::updateStreamAnime($MappingMongo, $this->mongo['collections_detail_anime'], $conditions, TRUE);
+                    foreach($getDownloadStream as $getDownloadStreamV){
+                        $adflyDownload[] = array(
+                            'id_download' => $getDownloadStreamV['id'],
+                            'name_download' => $getDownloadStreamV['name_server'],
+                            'adfly_link' => $getDownloadStreamV['adfly_link_download']
+                        );
+                    }
+                    $updateMongo['status'] = 404;
+                    $MappingMongo = array();
+                    if(count($dataServer) > 0){
+                        $MappingMongo = array(
+                            'id_auto' => $getStreamData['id'].'-streamAnime',
+                            'id_stream_anime' => $getStreamData['id'],
+                            'id_list_episode' => $getStreamData['id_list_episode'],
+                            'id_detail_anime' => $getStreamData['id_detail_anime'],
+                            'id_list_anime' => $getStreamData['id_list_anime'],
+                            'source_type' => 'stream-Anime',
+                            'code' => $getStreamData['code'],
+                            'slug' => $getStreamData['slug'],
+                            'title' => Converter::__normalizeSummary($getStreamData['title']),
+                            'synopsis' => $getStreamData['synopsis'],
+                            'data_server' => $dataServer,
+                            'data_download' => [
+                                'adfly' => $adflyDownload
+                            ],
+                            'image' => $getStreamData['image'],
+                            'status' => $getStreamData['status'],
+                            'rating' => $getStreamData['rating'],
+                            'episode_total' => $getStreamData['episode_total'],
+                            'genre' => explode('|',substr(trim($getStreamData['genre']),0,-1)),
+                            'keyword' => explode('-',$getStreamData['slug']),
+                            'meta_title' => (Converter::__normalizeSummary(strtolower($getStreamData['title']))),
+                            'meta_keywords' => explode('-',$getStreamData['slug']),
+                            'meta_tags' => explode('-',$getStreamData['slug']),
+                            'cron_at' => $getStreamData['cron_at']
+                        );
+                        $updateMongo = MainModelMongo::updateStreamAnime($MappingMongo, $this->mongo['collections_detail_anime'], $conditions, TRUE);
+                    }
+                    
                     
                     $status = 400;
                     $message = '';
@@ -495,16 +513,17 @@ class StreamAnimeController extends Controller
     
                         $status = 400;
                         $message = 'error';
-                        $messageLocal = serialize($updateMongo['message_local']);
+                        $messageLocal = 'Data Not Found';
                         $errorCount++;
                     }
     
                     #show log response
                     if($showLog){
-                        $slug = $MappingMongo['slug'];
-                        $prefixDate = Carbon::parse($MappingMongo['cron_at'])->format('Y-m-d H:i:s');
-                        if($isUpdated == TRUE) $prefixDate = Carbon::parse($MappingMongo['cron_at'])->format('Y-m-d H:i:s');
-                        echo $message.' | '.$prefixDate.' | '.$MappingMongo['id_auto'] .' => '.$slug.' | '.$messageLocal."\n";
+                        $slug = (count($MappingMongo) > 0) ? $MappingMongo['slug'] : 'Not Found';
+                        $prefixDate = (count($MappingMongo) > 0) ? Carbon::parse($MappingMongo['cron_at'])->format('Y-m-d H:i:s') : '';
+                        if($isUpdated == TRUE) $prefixDate = (count($MappingMongo) > 0) ? Carbon::parse($MappingMongo['cron_at'])->format('Y-m-d H:i:s') : '';
+                        $id_auto = (count($MappingMongo) > 0) ? $MappingMongo['id_auto'] : '' ;
+                        echo $message.' | '.$prefixDate.' | '. $id_auto.' => '.$slug.' | '.$messageLocal."\n";
     
                     }
                     
