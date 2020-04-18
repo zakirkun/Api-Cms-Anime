@@ -74,30 +74,9 @@ class StreamAnimeController extends Controller
                             $subHref = $KeyListDecode->href;
                             $ConfigController = new ConfigController();
                             $BASE_URL = $ConfigController->BASE_URL_ANIME_1;
-                            if($NextEpisode){
-                                $findCode = strstr($NextEpisode,'MTrU');
-                                if($findCode){
-                                    $KeyPagiDecode = EnkripsiData::DecodePaginationEps($NextEpisode);
-                                    $URL_Next = $KeyPagiDecode->href;
-                                    $BASE_URL_LIST = $URL_Next;
-                                    return $this->StreamValue($BASE_URL_LIST,$BASE_URL,$awal,$idDetailAnime_,$idListAnime_,$idListEpisode_);
-                                }else{
-                                    return ResponseConnected::InvalidKeyPagination("Stream Anime","Invalid Pagination", $awal);
-                                }
-                            }elseif($PrevEpisode){
-                                $findCode = strstr($PrevEpisode,'MTrU');
-                                if($findCode){
-                                    $KeyPagiDecode = EnkripsiData::DecodePaginationEps($PrevEpisode);
-                                    $URL_PREV = $KeyPagiDecode->href;
-                                    $BASE_URL_LIST = $URL_PREV;
-                                    return $this->StreamValue($BASE_URL_LIST,$BASE_URL,$awal,$idDetailAnime_,$idListAnime_,$idListEpisode_);
-                                }else{
-                                    return ResponseConnected::InvalidKeyPagination("Stream Anime","Invalid Pagination", $awal);
-                                }
-                            }else{
-                                $BASE_URL_LIST = $subHref;
-                                return $this->StreamValue($BASE_URL_LIST,$BASE_URL,$awal,$idDetailAnime_,$idListAnime_,$idListEpisode_);
-                            }
+                            $BASE_URL_LIST = $subHref;
+                            return $this->StreamValue($BASE_URL_LIST,$BASE_URL,$awal,$idDetailAnime_,$idListAnime_,$idListEpisode_);
+                            
                         }else{
                             return ResponseConnected::InvalidKey("Stream Anime","Invalid Key", $awal);
                         }
@@ -125,15 +104,16 @@ class StreamAnimeController extends Controller
 
         public function StreamValue($BASE_URL_LIST,$BASE_URL,$awal,$idDetailAnime_,$idListAnime_,$idListEpisode_){
             $client = new Client([
-                'timeout' => 10.0,
+                // 'timeout' => 20.0,
                 'cookie' => true,
                 'cookies' => new FileCookieJar('cookies.txt')
-                ]);
+            ]);
             $client->getConfig('handler')->push(CloudflareMiddleware::create());
             $goutteClient = new GoutteClient();
             $goutteClient->setClient($client);
             // Connect a 2nd user using an isolated browser and say hi!
             // untuk get data setelah .com url
+            
             $urlSlug = substr(strrchr($BASE_URL_LIST, '.'), 3); # xample /movie/naruto-shipudden
             $BASE_URL = substr($BASE_URL, 0, -1); #xample https://nanime.yt
             $BASE_URL_LIST = $BASE_URL.$urlSlug;
@@ -432,7 +412,7 @@ class StreamAnimeController extends Controller
                 'is_updated' => $isUpdated
             ];
             $getStreamData = MainModel::getStreamAnimeJoin($parameter);
-            
+            // dd($getStreamData);
             $errorCount = 0;
             $successCount = 0;
             if(count($getStreamData)){
@@ -462,37 +442,35 @@ class StreamAnimeController extends Controller
                             'adfly_link' => $getDownloadStreamV['adfly_link_download']
                         );
                     }
-                    $updateMongo['status'] = 404;
-                    $MappingMongo = array();
-                    if(count($dataServer) > 0){
-                        $MappingMongo = array(
-                            'id_auto' => $getStreamData['id'].'-streamAnime',
-                            'id_stream_anime' => $getStreamData['id'],
-                            'id_list_episode' => $getStreamData['id_list_episode'],
-                            'id_detail_anime' => $getStreamData['id_detail_anime'],
-                            'id_list_anime' => $getStreamData['id_list_anime'],
-                            'source_type' => 'stream-Anime',
-                            'code' => $getStreamData['code'],
-                            'slug' => $getStreamData['slug'],
-                            'title' => Converter::__normalizeSummary($getStreamData['title']),
-                            'synopsis' => $getStreamData['synopsis'],
-                            'data_server' => $dataServer,
-                            'data_download' => [
-                                'adfly' => $adflyDownload
-                            ],
-                            'image' => $getStreamData['image'],
-                            'status' => $getStreamData['status'],
-                            'rating' => $getStreamData['rating'],
-                            'episode_total' => $getStreamData['episode_total'],
-                            'genre' => explode('|',substr(trim($getStreamData['genre']),0,-1)),
-                            'keyword' => explode('-',$getStreamData['slug']),
-                            'meta_title' => (Converter::__normalizeSummary(strtolower($getStreamData['title']))),
-                            'meta_keywords' => explode('-',$getStreamData['slug']),
-                            'meta_tags' => explode('-',$getStreamData['slug']),
-                            'cron_at' => $getStreamData['cron_at']
-                        );
-                        $updateMongo = MainModelMongo::updateStreamAnime($MappingMongo, $this->mongo['collections_detail_anime'], $conditions, TRUE);
-                    }
+                    // $updateMongo['status'] = 404;
+                    // $MappingMongo = array();
+                    $MappingMongo = array(
+                        'id_auto' => $getStreamData['id'].'-streamAnime',
+                        'id_stream_anime' => $getStreamData['id'],
+                        'id_list_episode' => $getStreamData['id_list_episode'],
+                        'id_detail_anime' => $getStreamData['id_detail_anime'],
+                        'id_list_anime' => $getStreamData['id_list_anime'],
+                        'source_type' => 'stream-Anime',
+                        'code' => $getStreamData['code'],
+                        'slug' => $getStreamData['slug'],
+                        'title' => Converter::__normalizeSummary($getStreamData['title']),
+                        'synopsis' => $getStreamData['synopsis'],
+                        'data_server' => $dataServer,
+                        'data_download' => [
+                            'adfly' => $adflyDownload
+                        ],
+                        'image' => $getStreamData['image'],
+                        'status' => $getStreamData['status'],
+                        'rating' => $getStreamData['rating'],
+                        'episode_total' => $getStreamData['episode_total'],
+                        'genre' => explode('|',substr(trim($getStreamData['genre']),0,-1)),
+                        'keyword' => explode('-',$getStreamData['slug']),
+                        'meta_title' => (Converter::__normalizeSummary(strtolower($getStreamData['title']))),
+                        'meta_keywords' => explode('-',$getStreamData['slug']),
+                        'meta_tags' => explode('-',$getStreamData['slug']),
+                        'cron_at' => $getStreamData['cron_at']
+                    );
+                    $updateMongo = MainModelMongo::updateStreamAnime($MappingMongo, $this->mongo['collections_detail_anime'], $conditions, TRUE);
                     
                     
                     $status = 400;

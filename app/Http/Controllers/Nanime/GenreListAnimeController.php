@@ -174,7 +174,7 @@ class GenreListAnimeController extends Controller
         $param = $params; # get param dari populartopiclist atau dari cron
         if(is_null($params)) $param = $request->all();
 
-        $id = (isset($param['params']['id']) ? $param['params']['id'] : NULL);
+        $id = (isset($param['params']['id']) ? $param['params']['id'] : '');
         $code = (isset($param['params']['code']) ? $param['params']['code'] : '');
         $slug = (isset($param['params']['slug']) ? $param['params']['slug'] : '');
         $startNameIndex = (isset($param['params']['start_name_index']) ? $param['params']['start_name_index'] : '');
@@ -194,7 +194,9 @@ class GenreListAnimeController extends Controller
             'end_by_index' => $endNameIndex,
             'is_updated' => $isUpdated
         ];
+        
         $genreList = MainModel::getDataListGenre($parameter);
+        
         $errorCount = 0;
         $successCount = 0;
         if(count($genreList)){

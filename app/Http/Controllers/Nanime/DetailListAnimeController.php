@@ -161,7 +161,7 @@ class DetailListAnimeController extends Controller
                         "JudulAlternatif" => $JudulAlternatif,
                         "Rating" => $Rating,
                         "Votes" => $Votes,
-                        "Status" => $status,
+                        "Status" => ($status == '') ? 'Movie': $status,
                         "TotalEpisode"=> $TotalEpisode,
                         "HariTayang" => $HariTayang,
 
@@ -252,7 +252,7 @@ class DetailListAnimeController extends Controller
                         "JudulAlternatif" => $JudulAlternatif,
                         "Rating" => $Rating,
                         "Votes" => $Votes,
-                        "Status" => $status,
+                        "Status" => ($status == '') ? 'Movie': $status,
                         "TotalEpisode"=> $TotalEpisode,
                         "HariTayang" => $HariTayang,
                     );
