@@ -97,7 +97,7 @@ class CronStreamAnimeGenerateByID extends Command
                     }catch(\Exception $e){
                         $dataNotSave[] = array(
                             'Episode' => $listEpsAnime['episode'],
-                            'id' => $listEpsAnime['id'],
+                            'id_list_ep' => $listEpsAnime['id'],
                             'id_detail_anime' => $listEpsAnime['id_detail_anime'],
                             'id_list_anime' => $listEpsAnime['id_list_anime']
                         );
@@ -126,7 +126,7 @@ class CronStreamAnimeGenerateByID extends Command
                     }catch(\Exception $e){
                         $dataNotSave[] = array(
                             'Episode' => $listEpsAnime['episode'],
-                            'id' => $listEpsAnime['id']
+                            'id_list_ep' => $listEpsAnime['id']
                         );
                         $status = 'Not Complete';
                     }
