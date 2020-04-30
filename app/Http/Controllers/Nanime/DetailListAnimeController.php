@@ -457,6 +457,7 @@ class DetailListAnimeController extends Controller
             
             $idListEpisode['code'] = md5($SlugEpisode);
             $checkExist = MainModel::getDataListEpisodeAnime($idListEpisode);
+            
             if(empty($checkExist)){
                 $Input = array(
                     'code' => md5($SlugEpisode),
@@ -480,7 +481,8 @@ class DetailListAnimeController extends Controller
                     'id_detail_anime' => $idDetailAnime,
                     'cron_at' => Carbon::now()->format('Y-m-d H:i:s')
                 );
-                $LogSave [] =  "Data Update - ".$Episode."-".$Title;
+                
+                $LogSave [] =  "Data Update - ".$Episode."-".$Title.'-'.Carbon::now()->format('Y-m-d H:i:s');
                 $save = MainModel::updateListEpisodeMysql($Update,$conditions);
             }
         
@@ -522,7 +524,7 @@ class DetailListAnimeController extends Controller
             'is_updated' => $isUpdated
         ];
         $detailAnime = MainModel::getDataDetailAnime($parameter);
-        
+        // dd($detailAnime);
         $errorCount = 0;
         $successCount = 0;
         if(count($detailAnime)){
@@ -534,6 +536,7 @@ class DetailListAnimeController extends Controller
                     'id_detail_anime' => $detailAnime['id']
                 ];
                 $ListEpisode = MainModel::getDataListEpisodeJoin($param);
+                
                 $dataEps = array();
                 foreach($ListEpisode as $ListEpisode){
                     $dataEps[] = array(

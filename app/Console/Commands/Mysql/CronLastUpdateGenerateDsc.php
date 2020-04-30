@@ -105,6 +105,7 @@ class CronLastUpdateGenerateDsc extends Command
                 try{
                     $data = $this->LastUpdateEpsAnimController->LastUpdateAnime(NULL,$lastUpdate);
                     echo json_encode($data)."\n\n";
+                    // dd($data);
                 }catch(\Exception $e){
                     echo "Not Save Page Number :".$i."\n\n";
                     $dataNotSave[] = array(

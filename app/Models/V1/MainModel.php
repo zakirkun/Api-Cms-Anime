@@ -731,7 +731,8 @@ class MainModel extends Model
                 'LE.id as id_list_episode', 'LE.id_detail_anime', 'LE.slug', 'LE.episode',
                 'SA.id as id_stream_anime', 'SA.title'
             ])
-            ->leftJoin('stream_anime AS SA', 'LE.id', '=', 'SA.id_list_episode');
+            ->leftJoin('stream_anime AS SA', 'LE.id', '=', 'SA.id_list_episode')
+            ->orderBy('LE.id', 'asc');
         
         if(!empty($ID)) $query = $query->where('LE.id', '=', $ID);    
         if(!empty($id_detail_anime)) $query = $query->where('LE.id_detail_anime', '=', $id_detail_anime);    

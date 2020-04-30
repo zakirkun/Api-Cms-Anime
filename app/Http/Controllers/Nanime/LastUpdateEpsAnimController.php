@@ -416,13 +416,21 @@ class LastUpdateEpsAnimController extends Controller
                                     $ListEpisodeAnime = MainModel::getDataListEpisodeAnime($codeListEps);
                                     $idDetailAnime = (empty($DetailAnime)) ? 0 : $DetailAnime[0]['id'];
                                     $idListEpisode = (empty($ListEpisodeAnime)) ? 0 : $ListEpisodeAnime[0]['id'];
-                                    if(empty($DetailAnime) || $idDetailAnime == 0 || $idListEpisode == 0 || empty($ListEpisodeAnime) ){
+                                    if(count($ListEpisodeAnime) > 0){
+                                        foreach($ListEpisodeAnime as $valueEpisode){
+                                            $checkDate = date("Y-m-d", strtotime($valueEpisode['cron_at']));
+                                        }
+                                    }
+                                    
+                                    if(empty($DetailAnime) || $idDetailAnime == 0 || $idListEpisode == 0 || 
+                                    empty($ListEpisodeAnime) || $checkDate != date('Y-m-d')){
                                         $listDataAnime = [
                                             'params' => [
                                                 'X-API-KEY' => env('X_API_KEY',''),
                                                 'KeyListAnim' => $KeyListAnim
                                             ]
                                         ];
+                                        
                                         $dataDetailAnime = $this->DetailListAnimeController->DetailListAnim(NULL,$listDataAnime);
                                     }
                                     $DetailAnime = MainModel::getDataDetailAnime($codeDetailAnime);
@@ -430,7 +438,6 @@ class LastUpdateEpsAnimController extends Controller
                                     $idDetailAnime = (empty($DetailAnime)) ? 0 : $DetailAnime[0]['id'];
                                     $idListEpisode = (empty($ListEpisodeAnime)) ? 0 : $ListEpisodeAnime[0]['id'];
                                 }#End #save to detail anime and list episode
-    
                                 {#save to Data Last Update
                                     $checkExist = MainModel::getDataLastUpdate($codeListEps);
                                     if(empty($checkExist)){
@@ -470,8 +477,13 @@ class LastUpdateEpsAnimController extends Controller
                                             'page_search' => $PageNumber,
                                             'cron_at' => Carbon::now()->format('Y-m-d H:i:s')
                                         );
-                                        $LogSave [] =  "Data Update - ".$SlugEps;
+                                        // if($i ==1){
+                                        //     dd($Update);
+                                        // }
+                                        
+                                        $LogSave [] =  "Data Update - ".$SlugEps.'-'.Carbon::now()->format('Y-m-d H:i:s');
                                         $save = MainModel::updateLastUpdateMysql($Update,$conditions);
+                                        
                                     }
                                 }#End save to Data Last Update
     
